@@ -2,12 +2,12 @@
 ![untyper](./gif/CPT2209191551-397x87.gif)
 
 ## [Live demo](https://stackblitz.com/edit/vitejs-vite-2qxcej?file=main.js)
-A simple typewriter for brower,Typing effects can be achieved using chained methods
+A simple typewriter for browser,Typing effects can be achieved using chained methods
 
-## TODO
+## 🛹 TODO
 - [x] support custom typing effect
-- [ ] support custom cursor
-- [ ] support move cursor
+- [x] support custom cursor
+- [x] support move cursor
 - [ ] support add any document node
 
 ## 🚀 Feature

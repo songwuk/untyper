@@ -4,6 +4,11 @@
 ## [Live demo](https://stackblitz.com/edit/vitejs-vite-2qxcej?file=main.js)
 A simple typewriter for brower,Typing effects can be achieved using chained methods
 
+## TODO
+- [x] support custom typing effect
+- [ ] support custom cursor
+- [ ] support move cursor
+- [ ] support add any document node
 
 ## 🚀 Feature
   1. use [Web Animations API](https://developer.mozilla.org/en-US/docs/Web/API/Animation) Api to achieve typing effect

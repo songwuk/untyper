@@ -2,8 +2,13 @@
 ![untyper](./gif/CPT2209191551-397x87.gif)
 
 ## [Live demo](https://stackblitz.com/edit/vitejs-vite-2qxcej?file=main.js)
-A simple typewriter for brower,Typing effects can be achieved using chained methods
+A simple typewriter for browser,Typing effects can be achieved using chained methods
 
+## 🛹 TODO
+- [x] support custom typing effect
+- [x] support custom cursor
+- [x] support move cursor
+- [ ] support add any document node
 
 ## 🚀 Feature
   1. use [Web Animations API](https://developer.mozilla.org/en-US/docs/Web/API/Animation) Api to achieve typing effect

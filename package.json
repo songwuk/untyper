@@ -1,9 +1,9 @@
 {
   "name": "untyper",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "packageManager": "pnpm@7.9.0",
-  "description": "a simple typewriter for brower",
+  "description": "a simple typewriter for browser",
   "author": "Song wuk <1017301325@qq.com>",
   "license": "MIT",
   "homepage": "https://github.com/songwuk/untyper#readme",
@@ -15,7 +15,8 @@
   "keywords": [
     "TypeIt",
     "typewriter",
-    "untyper"
+    "untyper",
+    "typing"
   ],
   "sideEffects": false,
   "exports": {

@@ -7,9 +7,11 @@ export interface ScopeData {
   speed?: number
   startDelay?: number
 }
-export type ActionOpts = {
+
+export interface ActionOpts {
   delay?: number
-} & ScopeData
+  to?: 'start' | 'end'
+}
 
 export interface QueueItems {
   add: (steps: QueueItem[] | QueueItem) => any

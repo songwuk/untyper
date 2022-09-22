@@ -1,6 +1,6 @@
 import { Queue } from './queue'
 import type { ActionOpts, QueueItem, QueueItems, ScopeData, UnTyperType } from './types'
-import { delay, random } from './utils'
+import { delay, random, toString } from './utils'
 import { animationspancontent } from './constants'
 import { setcursoranimation } from './cursoranimation'
 export class UnTyper implements UnTyperType {
@@ -20,6 +20,8 @@ export class UnTyper implements UnTyperType {
   private _initCursor(): null | HTMLElement {
     const span = document.createElement('span')
     span.setAttribute('class', 'cursor')
+    span.style.width = '0'
+    span.style.transform = 'translateX(-0.3em)'
     span.style.display = 'inline-block'
     span.textContent = animationspancontent
     span.style.visibility = 'visible'
@@ -61,10 +63,56 @@ export class UnTyper implements UnTyperType {
     return this._queueAndReturn(itemtoQueue, opts)
   }
 
-  // // move to next element
-  // public move(movementArg: number, opts: ActionOpts = {}) {
-  //   return this
-  // }
+  // move to next element
+  public move(movementArg: number | null, opts: ActionOpts = {}) {
+    const { speed } = this._scopedata
+    if (toString(movementArg) === 'null') {
+      const { to } = opts
+      if (to === 'end') {
+        const endQuereItem = {
+          char: 'end',
+          delay: speed,
+          func: () => {
+            const cursor = document.querySelector('.cursor') as HTMLElement
+            const nodeParent = cursor.parentNode as HTMLElement
+            const lastNode = nodeParent.childNodes[nodeParent.childNodes.length]
+            nodeParent.insertBefore(cursor, lastNode)
+          },
+        }
+        return this._queueAndReturn(endQuereItem, opts)
+      }
+      else if (to === 'start') {
+        const startQuereItem = {
+          char: 'start',
+          delay: speed,
+          func: () => {
+            const cursor = document.querySelector('.cursor') as HTMLElement
+            const nodeParent = cursor.parentNode as HTMLElement
+            const lastNode = nodeParent.childNodes[0]
+            nodeParent.insertBefore(cursor, lastNode)
+          },
+        }
+        return this._queueAndReturn(startQuereItem, opts)
+      }
+    }
+    if (movementArg! >= 0)
+      throw new Error('movementArg must be negative')
+    const len = movementArg! * -1
+    const moveQuereItem = Array.from({ length: len }, (_, item) => {
+      return {
+        char: `move${item}`,
+        delay: speed,
+        func: () => {
+          const cursor = document.querySelector('.cursor') as HTMLElement
+          const nodeParent = cursor.parentNode as HTMLElement
+          // 2 because of the cursor
+          const nextSibling = nodeParent.childNodes[nodeParent.childNodes.length - item - 2]
+          nextSibling && nodeParent.insertBefore(cursor, nextSibling)
+        },
+      }
+    })
+    return this._queueAndReturn(moveQuereItem, opts)
+  }
 
   // pause typing
   public pause(ms: number) {

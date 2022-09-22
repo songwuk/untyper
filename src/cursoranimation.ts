@@ -1,10 +1,3 @@
-const beforePaint = (cb): Promise<any> => {
-  return new Promise((resolve) => {
-    requestAnimationFrame(async () => {
-      resolve(await cb())
-    })
-  })
-}
 const random = () => Math.random().toString().substring(2, 9)
 export function setcursoranimation(cursor: HTMLElement | null, opts: { speed?: number } = {}): Animation {
   if (!window.Animation)
@@ -22,8 +15,8 @@ export function setcursoranimation(cursor: HTMLElement | null, opts: { speed?: n
   animation.pause()
   const _id = random()
   animation.id = Symbol(_id + speed).toString()
-  beforePaint(() => {
-    beforePaint(() => {
+  requestAnimationFrame(async () => {
+    requestAnimationFrame(async () => {
       animation.play()
     })
   })

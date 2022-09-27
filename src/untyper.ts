@@ -7,11 +7,13 @@ export class UnTyper implements UnTyperType {
   private _dom: HTMLElement
   private _scopedata: ScopeData
   private _queue: QueueItems
+  private _waitDelete: number
   private _cursor: HTMLElement | null
   constructor(dom: HTMLElement, scopedata: ScopeData = {}) {
     if (!dom)
       throw new Error('No element found')
     this._dom = dom
+    this._waitDelete = 0
     this._scopedata = scopedata
     this._queue = Queue([{ delay: this._scopedata.startDelay }])
     this._cursor = this._initCursor()
@@ -21,7 +23,7 @@ export class UnTyper implements UnTyperType {
     const span = document.createElement('span')
     span.setAttribute('class', 'cursor')
     span.style.width = '0'
-    span.style.transform = 'translateX(-0.3em)'
+    span.style.transform = 'translateX(-0.1em)'
     span.style.display = 'inline-block'
     span.textContent = animationspancontent
     span.style.visibility = 'visible'
@@ -48,6 +50,7 @@ export class UnTyper implements UnTyperType {
 
   // type text
   public type(text: string, opts: ActionOpts = {}) {
+    this._waitDelete += text.length
     const { speed } = this._scopedata
     const chars = text.split('')
     const charsAsQueueItems = chars.map((char: string) => {
@@ -116,7 +119,7 @@ export class UnTyper implements UnTyperType {
 
   // pause typing
   public pause(ms: number) {
-    return this._queueAndReturn({
+    return this._queueAndReturn([], {
       delay: ms,
     })
   }
@@ -139,8 +142,12 @@ export class UnTyper implements UnTyperType {
   public delete(charAt: number, opts: ActionOpts = {}) {
     const { speed } = this._scopedata
     // calculate the last index of the queue
-    const lastIndex = [...this._queue.getQueue()].filter(([, item]) => item.char).length - 1
+    let lastIndex = 0
+    lastIndex = (this._waitDelete)
     const deleteQueueItem = Array.from({ length: charAt }, (_, i) => {
+      ++i
+      if (i === charAt)
+        this._waitDelete -= charAt
       return {
         char: `delete${i}`,
         delay: speed,

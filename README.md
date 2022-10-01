@@ -1,4 +1,9 @@
-# 🏠 untyper
+<h1 style='text-align:center'>
+  <img src='./public/untyper.png' alt="logo">
+</h1>
+
+[![NPM version](https://img.shields.io/npm/v/untyper?color=a1b858&label=)](https://www.npmjs.com/package/untyper)
+
 ![untyper](./gif/CPT2209191551-397x87.gif)
 
 ## [Live demo](https://stackblitz.com/edit/vitejs-vite-2qxcej?file=main.js)

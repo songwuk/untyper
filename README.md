@@ -1,6 +1,6 @@
-<h1 style='text-align:center'>
+<!-- <h1 style='text-align:center'>
   <img src='./public/untyper.png' alt="logo">
-</h1>
+</h1> -->
 
 [![NPM version](https://img.shields.io/npm/v/untyper?color=a1b858&label=)](https://www.npmjs.com/package/untyper)
 
@@ -35,7 +35,35 @@ const unTyper = new UnTyper(text, { speed: 100, startDelay: 1000 })
 unTyper.type('hi', { delay: 200 }).go()
 
 ```
+## Api
+#### type
+> input 
+  - text `string` 
+  - opts: `object`
+> output
+  - `this`
+#### pause 
+> input 
+  - ms `number` 
+> output
+  - `this`
+####  delete
+> input 
+  - charAt: `number`
+  - opts: `object`
+> output
+  - `this`
+#### move
+> input 
+  - movementArg: `number | null`
+  - opts: `object`-> {to: 'end'} |{to: 'start'} 
+> output 
+  - `this`
+#### add
+> WIP
 
+#### go
+> 
 ## Inspired by 
  - [typeit](https://github.com/alexmacarthur/typeit)
 

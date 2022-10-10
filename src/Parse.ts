@@ -4,16 +4,19 @@ export const parsehtml = (htmlTag: any[]): any[] => {
     for (const tag of htmlTags) {
       if (tag.value) {
         arrValue.push({
-          value: tag.value,
-          parentNode: tag.parentNode.nodeName,
+          func: () => {
+            return tag.value
+          },
         })
       }
       if (tag.tagName) {
         arrValue.push({
-          tag: tag.tagName,
-          attrs: tag.attrs ?? tag.attrs,
-          parentNode: tag.parentNode.nodeName,
-          end: tag.childNodes[tag.childNodes.length - 1].value,
+          func: () => {
+            const tagHtml = document.createElement(tag?.tagName)
+            for (const attrs of tag.attrs)
+              tagHtml.setAttribute(attrs.name, attrs.value)
+            return tagHtml
+          },
         })
         if (tag.childNodes && tag.childNodes !== 0)
           dfs(tag.childNodes)

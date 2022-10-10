@@ -5,6 +5,7 @@ import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
 import { delay, random, toString } from './utils'
 import { animationspancontent } from './constants'
 import { setcursoranimation } from './cursoranimation'
+type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend'
 export class UnTyper {
   private _dom: HTMLElement
   private _scopedata: ScopeData
@@ -38,9 +39,9 @@ export class UnTyper {
     setcursoranimation(this._cursor, { speed: this._scopedata.speed })
   }
 
-  private _type(char: string) {
+  private _type(char: string, positionSelect: InsertPosition = 'beforebegin') {
     const cursor = document.querySelector('.cursor') as HTMLElement
-    cursor && cursor.insertAdjacentHTML('beforebegin', char)
+    cursor && cursor.insertAdjacentHTML(positionSelect, char)
   }
 
   private _queueAndReturn(steps: QueueItem[] | QueueItem, opts: ActionOpts = {}) {
@@ -160,6 +161,32 @@ export class UnTyper {
     return this._queueAndReturn(deleteQueueItem, opts)
   }
 
+  public addtype(text: string, opts: ActionOpts = {}, tagCount: number, conut: number) {
+    const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
+    this._addTotalNumber += doc[0].value?.length
+    const { speed } = this._scopedata
+    const chars = doc[0].value?.split('')
+    const charsAsQueueItems = chars.map((char: string, i: number) => {
+      return {
+        char,
+        delay: speed,
+        func: () => {
+          const cursor = document.querySelector('.cursor') as HTMLElement
+          cursor && cursor.insertAdjacentHTML('beforebegin', char)
+          if (i + 1 === chars.length && tagCount === conut) {
+            console.log('跳出了')
+            const nodeParent = cursor.parentNode?.parentNode as HTMLElement
+            nodeParent.insertBefore(cursor, null)
+          }
+        },
+      }
+    })
+    const itemtoQueue = [
+      ...charsAsQueueItems,
+    ]
+    return this._queueAndReturn(itemtoQueue, opts)
+  }
+
   public add(htmlelement: string, opts: ActionOpts = {}) {
     const doc = parse5.parseFragment(htmlelement)
     const documentFragment = Array.from(doc.childNodes) as any[]
@@ -171,35 +198,38 @@ export class UnTyper {
     if (j === 0)
       return this.type(htmlelement, opts)
     const textArr = parsehtml(documentFragment)
+    const tagCount = textArr.filter(tag => typeof tag.func() !== 'string').length
     let len = 0
+    let conut = 0
     for (const text of textArr) {
-      if (!text.tag) {
-        this.type(text.value, opts)
-        len += text.value.length
+      const tag = text.func()
+      console.log(tag)
+      if (typeof tag === 'string') {
+        this.addtype(tag, opts, tagCount, conut)
+        len += tag.length
       }
-      else { this._addDom(text, opts, this._dom, len) }
+      else {
+        this._addDom(tag, opts, len)
+        ++conut
+      }
     }
     return this
   }
 
-  private _addDom(text: Record<string, any>, opts: ActionOpts = {}, _dom: HTMLElement, _len: number) {
+  private _addDom(text: HTMLElement, opts: ActionOpts = {}, _len: number) {
     const addDomAsQueueItems: any[] = []
-    if (text.tag) {
-      const tag = document.createElement(text.tag)
-      for (const attrs of text.attrs)
-        tag.setAttribute(attrs.name, attrs.value)
-      addDomAsQueueItems.push({
-        char: 'addDom',
-        delay: 0,
-        func: () => {
-          const cursor = document.querySelector('.cursor') as HTMLElement
-          const nodeParent = cursor.parentNode as HTMLElement
-          const len = _len
-          const lastNode = nodeParent.childNodes[len]
-          nodeParent.insertBefore(tag, lastNode)
-        },
-      })
-    }
+    addDomAsQueueItems.push({
+      char: 'addDom',
+      delay: 0,
+      func: () => {
+        const cursor = document.querySelector('.cursor') as HTMLElement
+        const nodeParent = cursor.parentNode as HTMLElement
+        const len = _len
+        const lastNode = nodeParent.childNodes[len]
+        nodeParent.insertBefore(text, lastNode)
+        text.insertBefore(cursor, null) // If this is null, then newNode is inserted at the end of node's child nodes.
+      },
+    })
     return this._queueAndReturn(addDomAsQueueItems, opts)
   }
 

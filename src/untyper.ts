@@ -161,7 +161,7 @@ export class UnTyper {
     return this._queueAndReturn(deleteQueueItem, opts)
   }
 
-  public addtype(text: string, opts: ActionOpts = {}, tagCount: number, conut: number) {
+  public addtype(text: string, opts: ActionOpts = {}, reCount: boolean) {
     const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
     this._addTotalNumber += doc[0].value?.length
     const { speed } = this._scopedata
@@ -173,8 +173,8 @@ export class UnTyper {
         func: () => {
           const cursor = document.querySelector('.cursor') as HTMLElement
           cursor && cursor.insertAdjacentHTML('beforebegin', char)
-          if (i + 1 === chars.length && tagCount === conut) {
-            console.log('跳出了')
+          if (i + 1 === chars.length && reCount) {
+            // console.log(reCount)
             const nodeParent = cursor.parentNode?.parentNode as HTMLElement
             nodeParent.insertBefore(cursor, null)
           }
@@ -200,18 +200,45 @@ export class UnTyper {
     const textArr = parsehtml(documentFragment)
     const tagCount = textArr.filter(tag => typeof tag.func() !== 'string').length
     let len = 0
-    let conut = 0
+    let count = 0
+    let uk = 0
+    // const k = 0
+    let reCount = false
     for (const text of textArr) {
+      // ++k
       const tag = text.func()
-      console.log(tag)
       if (typeof tag === 'string') {
-        this.addtype(tag, opts, tagCount, conut)
+        if (tagCount === count) {
+          uk++
+          if (uk <= count)
+            reCount = true
+          else
+            reCount = false
+        }
+        this.addtype(tag, opts, reCount)
         len += tag.length
       }
       else {
         this._addDom(tag, opts, len)
-        ++conut
+        ++count
       }
+      // finally calculate
+      // if (uk < count && tagCount === count && k === textArr.length) {
+      //   const addDomAsQueueItems: any[] = []
+      //   const souceCount = count - uk
+      //   for (let i = 0; i < souceCount; ++i) {
+      //     addDomAsQueueItems.push({
+      //       char: 'addDom',
+      //       delay: 0,
+      //       func: () => {
+      //         const cursor = document.querySelector('.cursor') as HTMLElement
+      //         const nodeParent = cursor.parentNode?.parentNode as HTMLElement
+      //         nodeParent.insertBefore(cursor, null)
+      //       },
+      //     })
+      //   }
+      //   this._queueAndReturn(addDomAsQueueItems, opts)
+      // }
     }
     return this
   }
@@ -227,6 +254,16 @@ export class UnTyper {
         const len = _len
         const lastNode = nodeParent.childNodes[len]
         nodeParent.insertBefore(text, lastNode)
+        const num = Number(nodeParent.getAttribute('data-source'))
+        if (Number(text.getAttribute('data-source')) < num) {
+          let pNode = nodeParent as ParentNode
+          let i = 0
+          while (i < num) {
+            i++
+            pNode = pNode?.parentNode ?? pNode
+          }
+          pNode.appendChild(text)
+        }
         text.insertBefore(cursor, null) // If this is null, then newNode is inserted at the end of node's child nodes.
       },
     })

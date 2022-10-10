@@ -1,19 +1,21 @@
+import * as parse5 from 'parse5'
+import { parsehtml } from './Parse'
 import { Queue } from './queue'
-import type { ActionOpts, QueueItem, QueueItems, ScopeData, UnTyperType } from './types'
+import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
 import { delay, random, toString } from './utils'
 import { animationspancontent } from './constants'
 import { setcursoranimation } from './cursoranimation'
-export class UnTyper implements UnTyperType {
+export class UnTyper {
   private _dom: HTMLElement
   private _scopedata: ScopeData
   private _queue: QueueItems
-  private _waitDelete: number
+  private _addTotalNumber: number
   private _cursor: HTMLElement | null
   constructor(dom: HTMLElement, scopedata: ScopeData = {}) {
     if (!dom)
       throw new Error('No element found')
     this._dom = dom
-    this._waitDelete = 0
+    this._addTotalNumber = 0
     this._scopedata = scopedata
     this._queue = Queue([{ delay: this._scopedata.startDelay }])
     this._cursor = this._initCursor()
@@ -50,9 +52,10 @@ export class UnTyper implements UnTyperType {
 
   // type text
   public type(text: string, opts: ActionOpts = {}) {
-    this._waitDelete += text.length
+    const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
+    this._addTotalNumber += doc[0].value?.length
     const { speed } = this._scopedata
-    const chars = text.split('')
+    const chars = doc[0].value?.split('')
     const charsAsQueueItems = chars.map((char: string) => {
       return {
         char,
@@ -127,7 +130,7 @@ export class UnTyper implements UnTyperType {
   private _delete(index: number) {
     const cursor = document.querySelector('.cursor') as HTMLElement
     const nodeParent = cursor.parentNode as HTMLElement
-    let nodeToRemove: HTMLElement | null | ChildNode = null
+    let nodeToRemove: HTMLElement | ChildNode | null = null
     if (nodeParent.childNodes.length > 1) {
       nodeToRemove = nodeParent.childNodes[index]
       nodeToRemove && nodeParent.removeChild(nodeToRemove)
@@ -143,11 +146,11 @@ export class UnTyper implements UnTyperType {
     const { speed } = this._scopedata
     // calculate the last index of the queue
     let lastIndex = 0
-    lastIndex = (this._waitDelete)
+    lastIndex = (this._addTotalNumber)
     const deleteQueueItem = Array.from({ length: charAt }, (_, i) => {
       ++i
       if (i === charAt)
-        this._waitDelete -= charAt
+        this._addTotalNumber -= charAt
       return {
         char: `delete${i}`,
         delay: speed,
@@ -155,6 +158,49 @@ export class UnTyper implements UnTyperType {
       }
     })
     return this._queueAndReturn(deleteQueueItem, opts)
+  }
+
+  public add(htmlelement: string, opts: ActionOpts = {}) {
+    const doc = parse5.parseFragment(htmlelement)
+    const documentFragment = Array.from(doc.childNodes) as any[]
+    let j = 0
+    for (const i of documentFragment) {
+      if (i.tagName)
+        j++
+    }
+    if (j === 0)
+      return this.type(htmlelement, opts)
+    const textArr = parsehtml(documentFragment)
+    let len = 0
+    for (const text of textArr) {
+      if (!text.tag) {
+        this.type(text.value, opts)
+        len += text.value.length
+      }
+      else { this._addDom(text, opts, this._dom, len) }
+    }
+    return this
+  }
+
+  private _addDom(text: Record<string, any>, opts: ActionOpts = {}, _dom: HTMLElement, _len: number) {
+    const addDomAsQueueItems: any[] = []
+    if (text.tag) {
+      const tag = document.createElement(text.tag)
+      for (const attrs of text.attrs)
+        tag.setAttribute(attrs.name, attrs.value)
+      addDomAsQueueItems.push({
+        char: 'addDom',
+        delay: 0,
+        func: () => {
+          const cursor = document.querySelector('.cursor') as HTMLElement
+          const nodeParent = cursor.parentNode as HTMLElement
+          const len = _len
+          const lastNode = nodeParent.childNodes[len]
+          nodeParent.insertBefore(tag, lastNode)
+        },
+      })
+    }
+    return this._queueAndReturn(addDomAsQueueItems, opts)
   }
 
   // start typing

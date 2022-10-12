@@ -5,6 +5,7 @@ import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
 import { delay, random, toString } from './utils'
 import { animationspancontent } from './constants'
 import { setcursoranimation } from './cursoranimation'
+const HashMap = new Map()
 type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend'
 export class UnTyper {
   private _dom: HTMLElement
@@ -26,7 +27,7 @@ export class UnTyper {
     const span = document.createElement('span')
     span.setAttribute('class', 'cursor')
     span.style.width = '0'
-    span.style.transform = 'translateX(-0.1em)'
+    span.style.transform = 'translateX(-0.05em)'
     span.style.display = 'inline-block'
     span.textContent = animationspancontent
     span.style.visibility = 'visible'
@@ -161,7 +162,7 @@ export class UnTyper {
     return this._queueAndReturn(deleteQueueItem, opts)
   }
 
-  public addtype(text: string, opts: ActionOpts = {}, reCount: boolean) {
+  public _addtype(text: string, opts: ActionOpts = {}, shouldNewline: boolean) {
     const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
     this._addTotalNumber += doc[0].value?.length
     const { speed } = this._scopedata
@@ -172,12 +173,12 @@ export class UnTyper {
         delay: speed,
         func: () => {
           const cursor = document.querySelector('.cursor') as HTMLElement
-          cursor && cursor.insertAdjacentHTML('beforebegin', char)
-          if (i + 1 === chars.length && reCount) {
-            // console.log(reCount)
-            const nodeParent = cursor.parentNode?.parentNode as HTMLElement
-            nodeParent.insertBefore(cursor, null)
+          if (shouldNewline && i === 0) {
+            const nodeParent = cursor.parentNode as HTMLElement
+            const lastNode = nodeParent.parentNode as HTMLElement
+            lastNode && lastNode.appendChild(cursor)
           }
+          cursor && cursor.insertAdjacentHTML('beforebegin', char)
         },
       }
     })
@@ -190,80 +191,70 @@ export class UnTyper {
   public add(htmlelement: string, opts: ActionOpts = {}) {
     const doc = parse5.parseFragment(htmlelement)
     const documentFragment = Array.from(doc.childNodes) as any[]
-    let j = 0
-    for (const i of documentFragment) {
-      if (i.tagName)
-        j++
-    }
-    if (j === 0)
-      return this.type(htmlelement, opts)
     const textArr = parsehtml(documentFragment)
-    const tagCount = textArr.filter(tag => typeof tag.func() !== 'string').length
-    let len = 0
-    let count = 0
-    let uk = 0
-    // const k = 0
-    let reCount = false
+    let lenPartof = 0
+    let k = 0
+    let kk = 0
     for (const text of textArr) {
-      // ++k
+      ++k
       const tag = text.func()
       if (typeof tag === 'string') {
-        if (tagCount === count) {
-          uk++
-          if (uk <= count)
-            reCount = true
-          else
-            reCount = false
-        }
-        this.addtype(tag, opts, reCount)
-        len += tag.length
+        kk++
+        this._addtype(tag, opts, kk === 2)
+        lenPartof += tag.length
+        if (HashMap.get('len'))
+          HashMap.set('len', HashMap.get('len') + lenPartof)
+        else
+          HashMap.set('len', lenPartof)
       }
       else {
-        this._addDom(tag, opts, len)
-        ++count
+        this._addDom(tag, opts)
+        kk = 0
       }
-      // finally calculate
-      // if (uk < count && tagCount === count && k === textArr.length) {
-      //   const addDomAsQueueItems: any[] = []
-      //   const souceCount = count - uk
-      //   for (let i = 0; i < souceCount; ++i) {
-      //     addDomAsQueueItems.push({
-      //       char: 'addDom',
-      //       delay: 0,
-      //       func: () => {
-      //         const cursor = document.querySelector('.cursor') as HTMLElement
-      //         const nodeParent = cursor.parentNode?.parentNode as HTMLElement
-      //         nodeParent.insertBefore(cursor, null)
-      //       },
-      //     })
-      //   }
-      //   this._queueAndReturn(addDomAsQueueItems, opts)
-      // }
+      if (k === textArr.length) {
+        const lastPromise = [{
+          char: 'addDom',
+          delay: 0,
+          func: () => {
+            const cursor = document.querySelector('.cursor') as HTMLElement
+            cursor && this._dom.appendChild(cursor)
+            // eslint-disable-next-line no-console
+            console.log('last')
+          },
+        }]
+        this._queueAndReturn(lastPromise)
+      }
     }
     return this
   }
 
-  private _addDom(text: HTMLElement, opts: ActionOpts = {}, _len: number) {
+  private _addDom(text: HTMLElement, opts: ActionOpts = {}) {
     const addDomAsQueueItems: any[] = []
     addDomAsQueueItems.push({
       char: 'addDom',
       delay: 0,
-      func: () => {
+      func: async () => {
         const cursor = document.querySelector('.cursor') as HTMLElement
         const nodeParent = cursor.parentNode as HTMLElement
-        const len = _len
-        const lastNode = nodeParent.childNodes[len]
+        const lastNode = nodeParent.childNodes[HashMap.get('len')]
         nodeParent.insertBefore(text, lastNode)
-        const num = Number(nodeParent.getAttribute('data-source'))
+        const num = Number(nodeParent.getAttribute('data-source')) ?? 0
+        let pNode = nodeParent as any
         if (Number(text.getAttribute('data-source')) < num) {
-          let pNode = nodeParent as ParentNode
-          let i = 0
-          while (i < num) {
-            i++
+          for (let i = 0; i < num; i++) {
             pNode = pNode?.parentNode ?? pNode
+            if (+pNode.getAttribute('data-source') === Number(text.getAttribute('data-source')))
+              break
           }
+          pNode = pNode?.parentNode
           pNode.appendChild(text)
         }
+        else if (Number(text.getAttribute('data-source')) === num) {
+          pNode = pNode?.parentNode
+          pNode.appendChild(text)
+        }
+        // text.removeAttribute('data-source')
+        // only add last childNode
         text.insertBefore(cursor, null) // If this is null, then newNode is inserted at the end of node's child nodes.
       },
     })
@@ -276,8 +267,8 @@ export class UnTyper {
     const queueItems = [...this._queue.getQueue()]
     for (let i = 0; i < queueItems.length; i++) {
       const [_queueKey, queueItem] = queueItems[i]
-      if (queueItem.func)
-        await delay(queueItem.delay * random(0, 1))
+      if (typeof queueItem.func === 'function')
+        await delay(queueItem.delay * random(0.8, 1.1))
       else
         await delay(queueItem.delay)
       queueItem.func && queueItem.func()

@@ -10,3 +10,5 @@ export function random(min: number, max: number): number {
 export function toString(str: any) {
   return Object.prototype.toString.call(str).toLocaleLowerCase().slice(8, -1)
 }
+// htmlRE
+// export const htmltagRE = /<[^>]*>/g

@@ -1,4 +1,11 @@
 const random = () => Math.random().toString().substring(2, 9)
+const beforePoint = (cb) => {
+  return new Promise((resolve) => {
+    requestAnimationFrame(async () => {
+      resolve(await cb())
+    })
+  })
+}
 export function setcursoranimation(cursor: HTMLElement | null, opts: { speed?: number } = {}): Animation {
   if (!window.Animation)
     throw new Error('Browser does not support Animation')
@@ -15,8 +22,8 @@ export function setcursoranimation(cursor: HTMLElement | null, opts: { speed?: n
   animation.pause()
   const _id = random()
   animation.id = Symbol(_id + speed).toString()
-  requestAnimationFrame(async () => {
-    requestAnimationFrame(async () => {
+  beforePoint(async () => {
+    beforePoint(async () => {
       animation.play()
     })
   })

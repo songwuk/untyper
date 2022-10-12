@@ -1,5 +1,5 @@
 export const parsehtml = (htmlTag: any[]): any[] => {
-  console.log(htmlTag)
+  // console.log('-----', htmlTag, '-----')
   const arrValue: any[] = []
   const dfs = (htmlTags: any[], k: number) => {
     k++
@@ -29,6 +29,5 @@ export const parsehtml = (htmlTag: any[]): any[] => {
     }
   }
   dfs(htmlTag, 0)
-  console.log(arrValue)
   return arrValue
 }

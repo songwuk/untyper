@@ -20,10 +20,3 @@ export interface QueueItems {
   cleanup: (key: Symbol) => any
 }
 
-export interface UnTyperType {
-  type: (text: string, opts: ActionOpts) => void
-  move: (movementArg: number, opts: ActionOpts) => void
-  delete: (charAt: number, opts: ActionOpts) => void
-  pause: (ms: number) => void
-  go: () => void
-}

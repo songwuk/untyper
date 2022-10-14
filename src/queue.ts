@@ -1,7 +1,7 @@
 import type { QueueItem, QueueItems } from './types'
 export function Queue(initialItems: QueueItem[]): QueueItems {
   const _q = new Map()
-  const add = function (steps: QueueItem[] | QueueItem): typeof Queue {
+  function add(steps: QueueItem[] | QueueItem): typeof Queue {
     if (typeof steps === 'object' && !Array.isArray(steps))
       steps = [steps]
     steps.forEach((step) => {

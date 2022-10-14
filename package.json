@@ -48,6 +48,9 @@
     "prepublishOnly": "nr build",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "parse5": "^7.1.1"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^0.26.1",
     "@antfu/ni": "^0.17.2",

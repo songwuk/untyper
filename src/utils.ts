@@ -7,7 +7,7 @@ export function random(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
-export function toString(str: any) {
+export function toString(str: unknown) {
   return Object.prototype.toString.call(str).toLocaleLowerCase().slice(8, -1)
 }
 // htmlRE

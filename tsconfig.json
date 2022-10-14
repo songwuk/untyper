@@ -8,8 +8,8 @@
     "strict": true,
     "strictNullChecks": true,
     "resolveJsonModule": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
     "skipLibCheck": true,
     "skipDefaultLibCheck": true
   }

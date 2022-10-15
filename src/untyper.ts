@@ -227,13 +227,11 @@ export class UnTyper {
     const textArr = parsehtml(documentFragment)
     let lastk = 0
     let kk = 0 // cursor -> 跳出当前的html标签
-    let correctStr = 0
     for (const text of textArr) {
       ++lastk
       const tag = text.func()
       if (typeof tag === 'string') {
         kk++
-        correctStr += tag.length
         this._addtype(tag, opts, kk === 2)
       }
       else {

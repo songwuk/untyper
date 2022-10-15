@@ -150,6 +150,9 @@ export class UnTyper {
       if (toString(sibling?.childNodes[childnode?.length - 1]) !== 'text') {
         if (sibling) { dfs(sibling?.childNodes[0] ?? null) }
         else {
+          // limit 最大删除
+          if (nodeParent === this._dom)
+            return false
           const nodeParentParent = nodeParent.parentNode
           nodeParentParent && nodeParentParent.insertBefore(cursor, nodeParent)
           nodeParent && nodeParent.remove()
@@ -183,8 +186,7 @@ export class UnTyper {
           func: () => this._delete(),
         }
       })
-      this._queueAndReturn([...deleteQueueItem]
-        , opts)
+      this._queueAndReturn([...deleteQueueItem], opts)
     }
     diff()
     return this

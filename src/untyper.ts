@@ -5,8 +5,7 @@ import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
 import { delay, random, toString } from './utils'
 import { animationspancontent } from './constants'
 import { setcursoranimation } from './cursoranimation'
-const HashMap = new Map()
-//
+const HashMap: Map<Symbol, any> = new Map()
 function getMapSize(getMap: Map<Symbol, number>): number {
   let len = 0
   getMap.forEach((value) => {
@@ -63,7 +62,6 @@ export class UnTyper {
   public type(text: string, opts: ActionOpts = {}) {
     const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
     const { speed } = this._scopedata
-    HashMap.set(Symbol(doc[0].value.length), doc[0].value.length)
     const chars = doc[0].value?.split('')
     const charsAsQueueItems = chars.map((char: string) => {
       return {
@@ -74,6 +72,10 @@ export class UnTyper {
     })
     const itemtoQueue = [
       ...charsAsQueueItems,
+      {
+        char: 'calculateTotal',
+        func: () => HashMap.set(Symbol(doc[0].value.length), doc[0].value.length),
+      },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
   }
@@ -146,13 +148,22 @@ export class UnTyper {
     const dfs = (sibling: HTMLElement | ChildNode | null) => {
       const childnode = sibling?.childNodes as NodeListOf<ChildNode>
       if (toString(sibling?.childNodes[childnode?.length - 1]) !== 'text') {
-        if (sibling)
-          dfs(sibling?.childNodes[0] ?? null)
-        else
-          console.log('最后了')
+        if (sibling) { dfs(sibling?.childNodes[0] ?? null) }
+        else {
+          // limit 最大删除
+          if (nodeParent === this._dom)
+            return false
+          const nodeParentParent = nodeParent.parentNode
+          nodeParentParent && nodeParentParent.insertBefore(cursor, nodeParent)
+          nodeParent && nodeParent.remove()
+          nodeParentParent && nodeParentParent.removeChild(cursor.previousSibling!)
+        }
       }
-
-      else { cursor.previousSibling?.appendChild(cursor) }
+      else {
+        cursor.previousSibling?.appendChild(cursor)
+        const prenodeParent = cursor.parentNode as HTMLElement
+        prenodeParent && prenodeParent.removeChild(cursor.previousSibling!)
+      }
     }
     if (toString(cursor.previousSibling) === 'text') {
       nodeToRemove = nodeParent.childNodes[len]
@@ -161,8 +172,6 @@ export class UnTyper {
     else {
       dfs(cursor?.previousSibling)
     }
-    // if (nodeParent.childNodes.length === 1)
-    //   nodeParent && nodeParent.remove()
   }
 
   // delete text
@@ -177,7 +186,7 @@ export class UnTyper {
           func: () => this._delete(),
         }
       })
-      this._queueAndReturn(deleteQueueItem, opts)
+      this._queueAndReturn([...deleteQueueItem], opts)
     }
     diff()
     return this
@@ -210,6 +219,10 @@ export class UnTyper {
     })
     const itemtoQueue = [
       ...charsAsQueueItems,
+      {
+        char: 'calculateTotal',
+        func: () => HashMap.set(Symbol(text.length), text.length),
+      },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
   }
@@ -226,7 +239,6 @@ export class UnTyper {
       if (typeof tag === 'string') {
         kk++
         this._addtype(tag, opts, kk === 2)
-        HashMap.set(Symbol(tag.length), tag.length)
       }
       else {
         this._addDom(tag, opts)
@@ -236,11 +248,11 @@ export class UnTyper {
         const lastPromise = [{
           char: 'addDom',
           delay: 0,
-          func: async () => {
+          func: () => {
             const cursor = document.querySelector('.cursor') as HTMLElement
             cursor && this._dom.appendChild(cursor)
             // eslint-disable-next-line no-console
-            console.log(`全局共:${getMapSize(HashMap)} 字符,共:${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
+            console.log(`总共:${getMapSize(HashMap)} 字符;添加${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
           },
         }]
         this._queueAndReturn(lastPromise)

@@ -63,7 +63,6 @@ export class UnTyper {
   public type(text: string, opts: ActionOpts = {}) {
     const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
     const { speed } = this._scopedata
-    HashMap.set(Symbol(doc[0].value.length), doc[0].value.length)
     const chars = doc[0].value?.split('')
     const charsAsQueueItems = chars.map((char: string) => {
       return {
@@ -74,6 +73,10 @@ export class UnTyper {
     })
     const itemtoQueue = [
       ...charsAsQueueItems,
+      {
+        char: 'calculateTotal',
+        func: () => HashMap.set(Symbol(doc[0].value.length), doc[0].value.length),
+      },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
   }
@@ -210,6 +213,10 @@ export class UnTyper {
     })
     const itemtoQueue = [
       ...charsAsQueueItems,
+      {
+        char: 'calculateTotal',
+        func: () => HashMap.set(Symbol(text.length), text.length),
+      },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
   }
@@ -228,7 +235,6 @@ export class UnTyper {
         kk++
         correctStr += tag.length
         this._addtype(tag, opts, kk === 2)
-        HashMap.set(Symbol(tag.length), tag.length)
       }
       else {
         this._addDom(tag, opts)
@@ -242,7 +248,7 @@ export class UnTyper {
             const cursor = document.querySelector('.cursor') as HTMLElement
             cursor && this._dom.appendChild(cursor)
             // eslint-disable-next-line no-console
-            console.log(`add:${correctStr} 字符和${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
+            console.log(`总共:${getMapSize(HashMap)} 字符;添加${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
           },
         }]
         this._queueAndReturn(lastPromise)

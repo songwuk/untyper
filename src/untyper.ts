@@ -220,11 +220,13 @@ export class UnTyper {
     const textArr = parsehtml(documentFragment)
     let lastk = 0
     let kk = 0 // cursor -> 跳出当前的html标签
+    let correctStr = 0
     for (const text of textArr) {
       ++lastk
       const tag = text.func()
       if (typeof tag === 'string') {
         kk++
+        correctStr += tag.length
         this._addtype(tag, opts, kk === 2)
         HashMap.set(Symbol(tag.length), tag.length)
       }
@@ -240,7 +242,7 @@ export class UnTyper {
             const cursor = document.querySelector('.cursor') as HTMLElement
             cursor && this._dom.appendChild(cursor)
             // eslint-disable-next-line no-console
-            console.log(`全局共:${getMapSize(HashMap)} 字符,共:${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
+            console.log(`add:${correctStr} 字符和${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
           },
         }]
         this._queueAndReturn(lastPromise)

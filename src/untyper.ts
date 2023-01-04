@@ -1,5 +1,5 @@
 import * as parse5 from 'parse5'
-import { parsehtml } from './Parse'
+import { parsehtml } from './parse'
 import { Queue } from './queue'
 import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
 import { delay, random, toString } from './utils'

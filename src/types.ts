@@ -20,3 +20,14 @@ export interface QueueItems {
   cleanup: (key: Symbol) => any
 }
 
+export interface ParsehtmlIn {
+  nodeName: string
+  parentNode: any
+  value: string
+}
+
+export interface ParsehtmlOut {
+  parentNode: any
+  func: () => string
+}
+

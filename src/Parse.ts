@@ -1,7 +1,8 @@
-export const parsehtml = (htmlTag: any[]): any[] => {
+import type { ParsehtmlIn, ParsehtmlOut } from './types'
+export const parsehtml = <T extends ParsehtmlIn>(htmlTag: T[]): ParsehtmlOut[] => {
   // console.log('-----', htmlTag, '-----')
-  const arrValue: any[] = []
-  const dfs = (htmlTags: any[], k: number) => {
+  const arrValue: ParsehtmlOut[] = []
+  const dfs = (htmlTags, k: number) => {
     k++
     for (const tag of htmlTags) {
       if (tag.value) {
@@ -29,5 +30,6 @@ export const parsehtml = (htmlTag: any[]): any[] => {
     }
   }
   dfs(htmlTag, 0)
+  // console.log(arrValue, 'arrValue')
   return arrValue
 }

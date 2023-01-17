@@ -10,5 +10,13 @@ export function random(min: number, max: number): number {
 export function toString(str: unknown) {
   return Object.prototype.toString.call(str).toLocaleLowerCase().slice(8, -1)
 }
+
+export function getMapSize(getMap: Map<Symbol, number>): number {
+  let len = 0
+  getMap.forEach((value) => {
+    len += value
+  })
+  return len
+}
 // htmlRE
 // export const htmltagRE = /<[^>]*>/g

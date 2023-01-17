@@ -2,16 +2,20 @@ import * as parse5 from 'parse5'
 import { parsehtml } from './parse'
 import { Queue } from './queue'
 import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
-import { delay, random, toString } from './utils'
+import { delay, getMapSize, random, toString } from './utils'
 import { animationspancontent } from './constants'
 import { setcursoranimation } from './cursoranimation'
 const HashMap: Map<Symbol, any> = new Map()
-function getMapSize(getMap: Map<Symbol, number>): number {
-  let len = 0
-  getMap.forEach((value) => {
-    len += value
-  })
-  return len
+const classSet = new Set()
+function checkRandom(_randomSet: number) {
+  if (!classSet.has(_randomSet)) {
+    classSet.add(_randomSet)
+    return _randomSet
+  }
+  else {
+    const randomSet = random(0, 100000)
+    return checkRandom(randomSet)
+  }
 }
 type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend'
 export class UnTyper {
@@ -29,8 +33,10 @@ export class UnTyper {
   }
 
   private _initCursor(): null | HTMLElement {
+    const randomSet = random(0, 100000)
+    const classValue = checkRandom(randomSet)
     const span = document.createElement('span')
-    span.setAttribute('class', 'cursor')
+    span.setAttribute('class', `cursor${classValue}`)
     span.style.width = '0'
     span.style.transform = 'translateX(-0.05em)'
     span.style.marginLeft = '2px'
@@ -47,7 +53,7 @@ export class UnTyper {
   }
 
   private _type(char: string, positionSelect: InsertPosition = 'beforebegin') {
-    const cursor = document.querySelector('.cursor') as HTMLElement
+    const cursor = this._cursor
     cursor && cursor.insertAdjacentHTML(positionSelect, char)
   }
 
@@ -90,7 +96,7 @@ export class UnTyper {
           char: 'end',
           delay: speed,
           func: () => {
-            const cursor = document.querySelector('.cursor') as HTMLElement
+            const cursor = this._cursor!
             cursor.style.transform = 'translateX(-0.05em)'
             const nodeParent = cursor.parentNode as HTMLElement
             const lastNode = nodeParent.childNodes[nodeParent.childNodes.length]
@@ -104,7 +110,7 @@ export class UnTyper {
           char: 'start',
           delay: speed,
           func: () => {
-            const cursor = document.querySelector('.cursor') as HTMLElement
+            const cursor = this._cursor!
             cursor.style.transform = 'translateX(-0.2em)'
             const nodeParent = cursor.parentNode as HTMLElement
             const lastNode = nodeParent.childNodes[0]
@@ -122,7 +128,7 @@ export class UnTyper {
         char: `move${item}`,
         delay: speed,
         func: () => {
-          const cursor = document.querySelector('.cursor') as HTMLElement
+          const cursor = this._cursor!
           const nodeParent = cursor.parentNode as HTMLElement
           // 2 because of the cursor
           const nextSibling = nodeParent.childNodes[nodeParent.childNodes.length - item - 2]
@@ -141,7 +147,7 @@ export class UnTyper {
   }
 
   private _delete() {
-    const cursor = document.querySelector('.cursor') as HTMLElement
+    const cursor = this._cursor!
     const nodeParent = cursor.parentNode as HTMLElement
     const len = nodeParent.childNodes.length - 2 // exclude self
     let nodeToRemove: HTMLElement | ChildNode | null = null
@@ -201,7 +207,7 @@ export class UnTyper {
         char,
         delay: speed,
         func: () => {
-          const cursor = document.querySelector('.cursor') as HTMLElement
+          const cursor = this._cursor!
           if (shouldNewline && i === 0) {
             const nodeParent = cursor.parentNode as HTMLElement
             const forLen = Number(nodeParent.getAttribute('data-source'))!
@@ -249,7 +255,7 @@ export class UnTyper {
           char: 'addDom',
           delay: 0,
           func: () => {
-            const cursor = document.querySelector('.cursor') as HTMLElement
+            const cursor = this._cursor!
             cursor && this._dom.appendChild(cursor)
             // eslint-disable-next-line no-console
             console.log(`总共:${getMapSize(HashMap)} 字符;添加${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
@@ -267,7 +273,7 @@ export class UnTyper {
       char: 'addDom',
       delay: 0,
       func: async () => {
-        const cursor = document.querySelector('.cursor') as HTMLElement
+        const cursor = this._cursor!
         const nodeParent = cursor.parentNode as HTMLElement
         const lastNode = nodeParent.childNodes[getMapSize(HashMap)]
         nodeParent.insertBefore(text, lastNode)

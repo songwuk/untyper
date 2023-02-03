@@ -1,4 +1,4 @@
-import type { ParsehtmlIn, ParsehtmlOut } from './types'
+import type { ParsehtmlIn, ParsehtmlOut } from '../../src/types'
 export const parsehtml = <T extends ParsehtmlIn>(htmlTag: T[]): ParsehtmlOut[] => {
   // console.log('-----', htmlTag, '-----')
   const arrValue: ParsehtmlOut[] = []

@@ -1,10 +1,10 @@
 import * as parse5 from 'parse5'
-import { parsehtml } from './parse'
-import { Queue } from './queue'
+import { parsehtml } from '../packages/h5/parse'
+import { Queue } from '../packages/h5/queue'
+import { delay, getMapSize, random, toString } from '../packages/h5/utils'
+import { animationspancontent } from '../packages/h5/constants'
+import { setcursoranimation } from '../packages/h5/cursoranimation'
 import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
-import { delay, getMapSize, random, toString } from './utils'
-import { animationspancontent } from './constants'
-import { setcursoranimation } from './cursoranimation'
 const HashMap: Map<Symbol, any> = new Map()
 const classSet = new Set()
 function checkRandom(_randomSet: number) {

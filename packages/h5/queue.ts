@@ -1,4 +1,4 @@
-import type { QueueItem, QueueItems } from './types'
+import type { QueueItem, QueueItems } from '../../src/types'
 export function Queue(initialItems: QueueItem[]): QueueItems {
   const _q = new Map()
   function add(steps: QueueItem[] | QueueItem): typeof Queue {

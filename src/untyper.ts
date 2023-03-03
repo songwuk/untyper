@@ -198,20 +198,20 @@ export class UnTyper {
     return this
   }
 
-  private _addtype(text: string, opts: ActionOpts = {}, shouldNewline: boolean) {
-    const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
+  private _addtype(text: string, opts: ActionOpts = {}, shouldNewline = false) {
     const { speed } = this._scopedata
-    const chars = doc[0].value?.split('')
+    const chars = text?.split('')
     const charsAsQueueItems = chars.map((char: string, i: number) => {
       return {
         char,
         delay: speed,
         func: () => {
           const cursor = this._cursor!
-          if (shouldNewline && i === 0) {
+          cursor && cursor.insertAdjacentHTML('beforebegin', char)
+          if (shouldNewline && i === chars.length - 1) {
             const nodeParent = cursor.parentNode as HTMLElement
-            const forLen = Number(nodeParent.getAttribute('data-source'))!
-            let i = 0
+            const forLen = Number(nodeParent.getAttribute('data-source')) ?? 0
+            let i = Number((nodeParent.parentNode as HTMLElement)?.getAttribute('data-source') ?? 0)
             let lastNode = cursor as any
             while (i < forLen) {
               ++i
@@ -219,7 +219,6 @@ export class UnTyper {
             }
             lastNode && lastNode.parentNode.appendChild(cursor)
           }
-          cursor && cursor.insertAdjacentHTML('beforebegin', char)
         },
       }
     })
@@ -238,18 +237,23 @@ export class UnTyper {
     const documentFragment = Array.from(doc.childNodes) as any[]
     const textArr = parsehtml(documentFragment)
     let lastk = 0
-    let kk = 0 // cursor -> 跳出当前的html标签
+    // const jumpnum = 0 // cursor -> 跳出当前的html标签
     for (const text of textArr) {
       ++lastk
-      const tag = text.func()
+      const tag = text.func() as any
       if (typeof tag === 'string') {
-        kk++
-        this._addtype(tag, opts, kk === 2)
+        /**
+         * 应该跳出当前标签
+         */
+        if (text.isEmpty)
+          this._addtype(tag, opts, true)
+        else
+          this._addtype(tag, opts, false)
       }
       else {
         this._addDom(tag, opts)
-        kk = 0
       }
+
       if (lastk === textArr.length) {
         const lastPromise = [{
           char: 'addDom',

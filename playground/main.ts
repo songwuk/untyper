@@ -5,7 +5,10 @@ const text2 = document.querySelector('#text2')! as HTMLElement
 const unTyper = new UnTyper(text, {
   speed: 100,
   startDelay: 1000,
-  // animate: {},
+  animationspancontent: '+',
+  animate: {
+    cancel: true,
+  },
 })
 // const lenObject = {
 //   'zh-CN': {

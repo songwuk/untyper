@@ -1,3 +1,6 @@
+export interface UnTyperAnimate {
+  cancel: Boolean
+}
 export interface QueueItem {
   char?: string
   delay?: number
@@ -7,6 +10,7 @@ export interface ScopeData {
   speed?: number
   startDelay?: number
   animationspancontent?: string
+  animate?: UnTyperAnimate
 }
 
 export interface ActionOpts {

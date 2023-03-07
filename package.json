@@ -46,6 +46,7 @@
     "lint": "eslint .",
     "playground": "vite playground",
     "prepublishOnly": "nr build",
+    "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

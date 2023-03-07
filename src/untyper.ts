@@ -41,7 +41,7 @@ export class UnTyper {
     span.style.transform = 'translateX(-0.05em)'
     span.style.marginLeft = '2px'
     span.style.display = 'inline-block'
-    span.textContent = animationspancontent
+    span.textContent = this._scopedata.animationspancontent ?? animationspancontent
     span.style.visibility = 'visible'
     return span as HTMLElement
   }

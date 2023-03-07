@@ -6,6 +6,7 @@ export interface QueueItem {
 export interface ScopeData {
   speed?: number
   startDelay?: number
+  animationspancontent?: string
 }
 
 export interface ActionOpts {

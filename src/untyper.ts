@@ -3,7 +3,7 @@ import { parsehtml } from '../packages/h5/parse'
 import { Queue } from '../packages/h5/queue'
 import { delay, getMapSize, random, toString } from '../packages/h5/utils'
 import { animationspancontent } from '../packages/h5/constants'
-import { beforePoint, setcursoranimation } from '../packages/h5/cursoranimation'
+import { setcursoranimation } from '../packages/h5/cursoranimation'
 import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
 const HashMap: Map<Symbol, any> = new Map()
 const classSet = new Set()
@@ -311,28 +311,32 @@ export class UnTyper {
   }
 
   private async animateText() {
-    await this._attachCursor()
+    const animatefn = await this._attachCursor()
     const queueItems = [...this._queue.getQueue()]
     for (let i = 0; i < queueItems.length; i++) {
       const [_queueKey, queueItem] = queueItems[i]
       try {
         if (queueItem.func && typeof queueItem.func === 'function') {
           queueItem.func()
-          // animatefn.playbackRate = 1
-          // beforePoint(async () => {
-          //   beforePoint(async () => {
-          //     animatefn.play()
-          //   })
-          // })
-          await delay(queueItem.delay * random(0.8, 1.1))
+          if (queueItem.delay) {
+            if (queueItem.delay * random(0.8, 1.1) >= 1000)
+              animatefn.startCursorAnimation()
+            else
+              animatefn.stopCursorAnimation()
+            await delay(queueItem.delay * random(0.8, 1.1), () => animatefn.stopCursorAnimation())
+          }
         }
-        else { await delay(queueItem.delay) }
+        else {
+          await delay(queueItem.delay, () => animatefn.stopCursorAnimation())
+        }
         this._queue.cleanup(_queueKey)
       }
       catch (error) {
         console.error('An error occurred during animation:', error)
       }
     }
+    if (this._queue.getQueue.length === 0)
+      animatefn.startCursorAnimation()
   }
 
   // // 停止动画方法

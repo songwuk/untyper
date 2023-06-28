@@ -3,7 +3,7 @@ import { parsehtml } from '../packages/h5/parse'
 import { Queue } from '../packages/h5/queue'
 import { delay, getMapSize, random, toString } from '../packages/h5/utils'
 import { animationspancontent } from '../packages/h5/constants'
-import { setcursoranimation } from '../packages/h5/cursoranimation'
+import { beforePoint, setcursoranimation } from '../packages/h5/cursoranimation'
 import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
 const HashMap: Map<Symbol, any> = new Map()
 const classSet = new Set()
@@ -19,6 +19,7 @@ function checkRandom(_randomSet: number) {
 }
 type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend'
 export class UnTyper {
+  // private isAnimating: boolean
   private _dom: HTMLElement
   private _scopedata: ScopeData
   private _queue: QueueItems
@@ -49,7 +50,7 @@ export class UnTyper {
   private async _attachCursor() {
     if (this._dom && this._cursor)
       this._dom.appendChild(this._cursor)
-    setcursoranimation(this._cursor, { speed: this._scopedata.speed })
+    return setcursoranimation(this._cursor, { speed: this._scopedata.speed })
   }
 
   private _type(char: string, positionSelect: InsertPosition = 'beforebegin') {
@@ -87,7 +88,7 @@ export class UnTyper {
   }
 
   // move to next element
-  public move(movementArg: number | null, opts: ActionOpts = {}) {
+  public move(movementArg: number, opts: ActionOpts = {}) {
     const { speed } = this._scopedata
     if (toString(movementArg) === 'null') {
       const { to } = opts
@@ -120,7 +121,7 @@ export class UnTyper {
         return this._queueAndReturn(startQuereItem, opts)
       }
     }
-    if (movementArg! >= 0)
+    if (movementArg >= 0)
       throw new Error('movementArg must be negative')
     const len = movementArg! * -1
     const moveQuereItem = Array.from({ length: len }, (_, item) => {
@@ -198,7 +199,7 @@ export class UnTyper {
     return this
   }
 
-  private _addtype(text: string, opts: ActionOpts = {}, shouldNewline = false) {
+  private _addtype(text: string, opts: ActionOpts = {}, jumpNextLine = false) {
     const { speed } = this._scopedata
     const chars = text?.split('')
     const charsAsQueueItems = chars.map((char: string, i: number) => {
@@ -208,7 +209,7 @@ export class UnTyper {
         func: () => {
           const cursor = this._cursor!
           cursor && cursor.insertAdjacentHTML('beforebegin', char)
-          if (shouldNewline && i === chars.length - 1) {
+          if (jumpNextLine && i === chars.length - 1) {
             const nodeParent = cursor.parentNode as HTMLElement
             const forLen = Number(nodeParent.getAttribute('data-source')) ?? 0
             let i = Number((nodeParent.parentNode as HTMLElement)?.getAttribute('data-source') ?? 0)
@@ -306,17 +307,42 @@ export class UnTyper {
 
   // start typing
   public async go() {
+    this.animateText()
+  }
+
+  private async animateText() {
     await this._attachCursor()
     const queueItems = [...this._queue.getQueue()]
     for (let i = 0; i < queueItems.length; i++) {
       const [_queueKey, queueItem] = queueItems[i]
-      if (typeof queueItem.func === 'function')
-        await delay(queueItem.delay * random(0.8, 1.1))
-      else
-        await delay(queueItem.delay)
-      queueItem.func && queueItem.func()
-
-      this._queue.cleanup(_queueKey)
+      try {
+        if (queueItem.func && typeof queueItem.func === 'function') {
+          queueItem.func()
+          // animatefn.playbackRate = 1
+          // beforePoint(async () => {
+          //   beforePoint(async () => {
+          //     animatefn.play()
+          //   })
+          // })
+          await delay(queueItem.delay * random(0.8, 1.1))
+        }
+        else { await delay(queueItem.delay) }
+        this._queue.cleanup(_queueKey)
+      }
+      catch (error) {
+        console.error('An error occurred during animation:', error)
+      }
     }
   }
+
+  // // 停止动画方法
+  // stopAnimation() {
+  //   this.isAnimating = false
+  // }
+
+  // // 恢复动画方法
+  // resumeAnimation() {
+  //   this.isAnimating = true
+  //   this.animateText()
+  // }
 }

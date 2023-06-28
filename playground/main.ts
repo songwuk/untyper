@@ -3,7 +3,7 @@ import './main.css'
 const text = document.querySelector('#text')! as HTMLElement
 const text2 = document.querySelector('#text2')! as HTMLElement
 const unTyper = new UnTyper(text, {
-  speed: 100,
+  speed: 1000,
   startDelay: 1000,
   animationspancontent: '+',
   animate: {

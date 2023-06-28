@@ -1,5 +1,6 @@
 // delay
-export function delay(ms: number): Promise<any> {
+export function delay(ms: number, fn?: () => void): Promise<any> {
+  fn && fn()
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 // random

@@ -34,7 +34,7 @@ export interface ParsehtmlIn {
 export interface ParsehtmlOut {
   parentNode: any
   content?: string
-  isEmpty?: Boolean
+  isEmpty?: boolean
   nodeName: string
   func: () => string
 }

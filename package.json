@@ -1,7 +1,7 @@
 {
   "name": "untyper",
   "type": "module",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "packageManager": "pnpm@7.9.0",
   "description": "a simple typewriter for browser",
   "author": "Song wuk <1017301325@qq.com>",

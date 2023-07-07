@@ -40,7 +40,11 @@ unTyper.type('hi', { delay: 200 }).go()
 > **Warning**: only support string
 > input 
   - text `string` 
-  - opts: `object` -> delay?: `number`
+  - opts: `object` { delay?: `number`, startDelay: `number`,
+  animationspancontent: `string`,
+  animate: {
+    cancel: `boolean`,
+  },}
 > output
   - `this`
 #### pause 

@@ -28,6 +28,11 @@ export class UnTyper {
     if (!dom)
       throw new Error('No element found')
     this._dom = dom
+    scopedata = Object.assign({
+      animate: {
+        cancel: false,
+      },
+    }, { ...scopedata })
     this._scopedata = scopedata
     this._queue = Queue([{ delay: this._scopedata.startDelay }])
     this._cursor = this._initCursor()
@@ -335,18 +340,13 @@ export class UnTyper {
         console.error('An error occurred during animation:', error)
       }
     }
-    if (this._queue.getQueue.length === 0)
-      animatefn.startCursorAnimation()
+    if (this._queue.getQueue.length === 0) {
+      if (!this._scopedata.animate?.cancel) { animatefn.startCursorAnimation() }
+      else {
+        animatefn.stopCursorAnimation()
+        const cursor = this._cursor!
+        cursor.style.display = 'none'
+      }
+    }
   }
-
-  // // 停止动画方法
-  // stopAnimation() {
-  //   this.isAnimating = false
-  // }
-
-  // // 恢复动画方法
-  // resumeAnimation() {
-  //   this.isAnimating = true
-  //   this.animateText()
-  // }
 }

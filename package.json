@@ -1,7 +1,7 @@
 {
   "name": "untyper",
   "type": "module",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "packageManager": "pnpm@7.9.0",
   "description": "a simple typewriter for browser",
   "author": "Song wuk <1017301325@qq.com>",
@@ -50,20 +50,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "parse5": "^7.1.1"
+    "parse5": "^7.1.2"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^0.26.1",
+    "@antfu/eslint-config": "^0.26.3",
     "@antfu/ni": "^0.17.2",
     "@antfu/utils": "^0.5.2",
-    "@types/node": "^18.7.5",
-    "@types/web-animations-js": "^2.2.12",
-    "eslint": "^8.22.0",
-    "pnpm": "^7.9.0",
+    "@types/node": "^18.19.28",
+    "@types/web-animations-js": "^2.2.16",
+    "eslint": "^8.57.0",
+    "pnpm": "^7.33.7",
     "rimraf": "^3.0.2",
-    "typescript": "^4.7.4",
-    "unbuild": "^0.8.8",
-    "vite": "^3.0.7",
-    "vitest": "^0.22.0"
+    "typescript": "^4.9.5",
+    "unbuild": "^0.8.11",
+    "vite": "^3.2.10",
+    "vitest": "^0.22.1"
   }
 }

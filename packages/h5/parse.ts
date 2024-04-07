@@ -5,7 +5,6 @@ export const parsehtml = <T extends ParsehtmlIn>(htmlTag: T[]): ParsehtmlOut[] =
   const dfs = (htmlTags, k: number) => {
     k++
     for (const tag of htmlTags) {
-      // console.log(tag, 'tag')
       if (tag.value) {
         arrValue.push({
           parentNode: tag.parentNode.nodeName,
@@ -18,16 +17,16 @@ export const parsehtml = <T extends ParsehtmlIn>(htmlTag: T[]): ParsehtmlOut[] =
         })
         isEmpty = false
       }
-      if (tag.tagName) {
+      if (tag.tagName) { // tagName
         isEmpty = !tag.childNodes.some(x => x.nodeName !== '#text')
         arrValue.push({
           parentNode: tag.parentNode.nodeName,
           nodeName: tag.nodeName,
           func: () => {
             const tagHtml = document.createElement(tag?.tagName)
-            tagHtml.setAttribute('data-source', k)
             for (const attrs of tag.attrs)
               tagHtml.setAttribute(attrs.name, attrs.value)
+            tagHtml.setAttribute('data-source', k)
             return tagHtml
           },
         })

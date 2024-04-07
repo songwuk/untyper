@@ -1,3 +1,6 @@
+/**
+ * type add delete pause move go
+ */
 export interface UnTyperAnimate {
   cancel: Boolean
 }

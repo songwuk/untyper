@@ -46,7 +46,7 @@
     "lint": "eslint .",
     "playground": "vite playground",
     "prepublishOnly": "nr build",
-    "test": "vitest",
+    "test": "vitest --config ./vitest.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -59,11 +59,12 @@
     "@types/node": "^18.19.28",
     "@types/web-animations-js": "^2.2.16",
     "eslint": "^8.57.0",
+    "jsdom": "^24.0.0",
     "pnpm": "^7.33.7",
     "rimraf": "^3.0.2",
     "typescript": "^4.9.5",
     "unbuild": "^0.8.11",
     "vite": "^3.2.10",
-    "vitest": "^0.22.1"
+    "vitest": "^1.4.0"
   }
 }

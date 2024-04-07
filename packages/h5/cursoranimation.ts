@@ -11,8 +11,13 @@ export interface AnimationOut {
 }
 export function setcursoranimation(cursor: HTMLElement | null, opts: { speed?: number } = {}): AnimationOut {
   const random = () => Math.random().toString().substring(2, 9)
-  if (!window.Animation)
-    throw new Error('Browser does not support Animation')
+  if (!window.Animation) {
+    console.warn('Browser does not support Animation')
+    return {
+      stopCursorAnimation: () => {},
+      startCursorAnimation: () => {},
+    }
+  }
   // TODO
   const { speed } = opts
   const animation = cursor!.animate([0, 0, 1].map((n) => {

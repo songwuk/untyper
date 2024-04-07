@@ -25,7 +25,7 @@ jobs:
           cache: pnpm
 
       - name: Setup
-        run: npm i -g pnpm 
+        run: npm i -g pnpm
 
       - name: Install
         run: pnpm i
@@ -48,7 +48,7 @@ jobs:
           cache: pnpm
 
       - name: Setup
-        run: npm i -g pnpm 
+        run: npm i -g pnpm
 
       - name: Install
         run: pnpm i
@@ -78,7 +78,7 @@ jobs:
           cache: pnpm
 
       - name: Setup
-        run: npm i -g pnpm 
+        run: npm i -g pnpm
 
       - name: Install
         run: pnpm i

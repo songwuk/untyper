@@ -216,14 +216,18 @@ export class UnTyper {
           cursor && cursor.insertAdjacentHTML('beforebegin', char)
           if (jumpNextLine && i === chars.length - 1) {
             const nodeParent = cursor.parentNode as HTMLElement
-            const forLen = Number(nodeParent.getAttribute('data-source')) ?? 0
-            let i = Number((nodeParent.parentNode as HTMLElement)?.getAttribute('data-source') ?? 0)
-            let lastNode = cursor as any
-            while (i < forLen) {
-              ++i
-              lastNode = lastNode.parentNode ?? cursor
+            const forLen = Number(nodeParent.getAttribute('data-source')) ?? 1
+            let iParent = Number((nodeParent.parentNode as HTMLElement)?.getAttribute('data-source') ?? 0)
+            let lastNode = cursor as HTMLElement as any
+            while (iParent < forLen) {
+              ++iParent
+              for (let index = 1; index <= forLen; index++) {
+                lastNode = lastNode.parentNode ?? cursor
+                // delete inline style `data-source`
+                this._deleteinlinestyle(lastNode)
+              }
             }
-            lastNode && lastNode.parentNode.appendChild(cursor)
+            lastNode && lastNode.parentNode.appendChild(cursor) // --> put in outside
           }
         },
       }
@@ -243,26 +247,17 @@ export class UnTyper {
     const documentFragment = Array.from(doc.childNodes) as any[]
     const textArr = parsehtml(documentFragment)
     let lastk = 0
-    // const jumpnum = 0 // cursor -> 跳出当前的html标签
     for (const text of textArr) {
       ++lastk
       const tag = text.func() as any
-      if (typeof tag === 'string') {
-        /**
-         * 应该跳出当前标签
-         */
-        if (text.isEmpty)
-          this._addtype(tag, opts, true)
-        else
-          this._addtype(tag, opts, false)
-      }
-      else {
+      if (typeof tag === 'string')
+        this._addtype(tag, opts, text.isEmpty)
+      else
         this._addDom(tag, opts)
-      }
 
       if (lastk === textArr.length) {
-        const lastPromise = [{
-          char: 'addDom',
+        const allTextCount = [{
+          char: 'alltextcount',
           delay: 0,
           func: () => {
             const cursor = this._cursor!
@@ -271,7 +266,7 @@ export class UnTyper {
             console.log(`总共:${getMapSize(HashMap)} 字符;添加${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
           },
         }]
-        this._queueAndReturn(lastPromise)
+        this._queueAndReturn(allTextCount)
       }
     }
     return this
@@ -302,12 +297,19 @@ export class UnTyper {
           pNode = pNode?.parentNode
           pNode.appendChild(text)
         }
-        // text.removeAttribute('data-source')
         // only add last childNode
         text.insertBefore(cursor, null) // If this is null, then newNode is inserted at the end of node's child nodes.
       },
     })
     return this._queueAndReturn(addDomAsQueueItems, opts)
+  }
+
+  private _checkinlinedom() {
+
+  }
+
+  private _deleteinlinestyle(nodeCurrent: HTMLElement) {
+    nodeCurrent.removeAttribute('data-source')
   }
 
   // start typing

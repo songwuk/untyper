@@ -1,7 +1,7 @@
 import type { QueueItem, QueueItems } from '../../src/types'
 export function Queue(initialItems: QueueItem[]): QueueItems {
-  const _q = new Map()
-  function add(steps: QueueItem[] | QueueItem): typeof Queue {
+  const _q = new Map<symbol, QueueItem>()
+  function add(steps: QueueItem[] | QueueItem): QueueItems {
     if (typeof steps === 'object' && !Array.isArray(steps))
       steps = [steps]
     steps.forEach((step) => {
@@ -14,7 +14,7 @@ export function Queue(initialItems: QueueItem[]): QueueItems {
   }
   const getQueue = () => _q
   add(initialItems)
-  const cleanup = (key: Symbol) => {
+  const cleanup = (key: symbol) => {
     _q.delete(key)
   }
   return {

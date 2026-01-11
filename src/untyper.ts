@@ -323,7 +323,7 @@ export class UnTyper {
           func: () => {
             const cursor = this._cursor!
             cursor && this._dom.appendChild(cursor)
-            void getMapSize(this._hashMap)
+            getMapSize(this._hashMap)
           },
         }]
         this._queueAndReturn(allTextCount)

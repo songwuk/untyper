@@ -4,44 +4,79 @@ import { Queue } from '../packages/h5/queue'
 import { delay, getMapSize, random, toString } from '../packages/h5/utils'
 import { animationspancontent } from '../packages/h5/constants'
 import { setcursoranimation } from '../packages/h5/cursoranimation'
-import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
+import type {
+  ActionOpts,
+  ElementAnimation,
+  ImageActionOpts,
+  QueueItem,
+  QueueItems,
+  ScopeData,
+} from './types'
+
 type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend'
+
+const DEFAULT_SCOPE: ScopeData = {
+  speed: 120,
+  startDelay: 0,
+  animationspancontent,
+  animate: {
+    cancel: false,
+  },
+}
+
+const VOID_ELEMENTS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+])
+
 export class UnTyper {
-  // private isAnimating: boolean
   private _dom: HTMLElement
   private _scopedata: ScopeData
   private _queue: QueueItems
   private _cursor: HTMLElement | null
   private _hashMap: Map<symbol, number>
   private _classSet: Set<number>
+
   constructor(dom: HTMLElement, scopedata: ScopeData = {}) {
     if (!dom)
       throw new Error('No element found')
     this._dom = dom
-    scopedata = Object.assign({
+    this._scopedata = {
+      ...DEFAULT_SCOPE,
+      ...scopedata,
       animate: {
-        cancel: false,
+        ...DEFAULT_SCOPE.animate,
+        ...scopedata.animate,
       },
-    }, { ...scopedata })
-    this._scopedata = scopedata
+    }
     this._queue = Queue([{ delay: this._scopedata.startDelay }])
     this._hashMap = new Map<symbol, number>()
     this._classSet = new Set<number>()
     this._cursor = this._initCursor()
   }
 
-  private _checkRandom(_randomSet: number): number {
-    if (!this._classSet.has(_randomSet)) {
-      this._classSet.add(_randomSet)
-      return _randomSet
+  private _checkRandom(randomSet: number): number {
+    if (!this._classSet.has(randomSet)) {
+      this._classSet.add(randomSet)
+      return randomSet
     }
-    const randomSet = random(0, 100000)
-    return this._checkRandom(randomSet)
+    return this._checkRandom(random(0, 100000))
   }
 
   private _initCursor(): null | HTMLElement {
-    const randomSet = random(0, 100000)
-    const classValue = this._checkRandom(randomSet)
+    const classValue = this._checkRandom(random(0, 100000))
     const span = document.createElement('span')
     span.setAttribute('class', `cursor${classValue}`)
     span.style.width = '0'
@@ -54,13 +89,24 @@ export class UnTyper {
     return span as HTMLElement
   }
 
-  private async _attachCursor() {
+  private _attachCursor() {
     if (this._dom && this._cursor)
       this._dom.appendChild(this._cursor)
     return setcursoranimation(this._cursor, {
       speed: this._scopedata.speed,
       animation: this._scopedata.cursorAnimation,
     })
+  }
+
+  private _applyAnimation(target: HTMLElement, animation?: ElementAnimation) {
+    if (!animation)
+      return
+    const animatable = target as HTMLElement & {
+      animate?: (keyframes: Keyframe[], options?: KeyframeAnimationOptions) => Animation
+    }
+    if (typeof animatable.animate !== 'function')
+      return
+    animatable.animate(animation.keyframes, animation.options)
   }
 
   private _type(char: string, positionSelect: InsertPosition = 'beforebegin') {
@@ -123,7 +169,7 @@ export class UnTyper {
         }
         return this._queueAndReturn(endQuereItem, opts)
       }
-      else if (to === 'start') {
+      if (to === 'start') {
         const startQuereItem = {
           char: 'start',
           delay: speed,
@@ -141,7 +187,7 @@ export class UnTyper {
     }
     if (movementArg >= 0)
       throw new Error('movementArg must be negative')
-    const len = movementArg! * -1
+    const len = movementArg * -1
     const moveQuereItem = Array.from({ length: len }, (_, item) => {
       return {
         char: `move${item}`,
@@ -277,14 +323,33 @@ export class UnTyper {
           func: () => {
             const cursor = this._cursor!
             cursor && this._dom.appendChild(cursor)
-            // eslint-disable-next-line no-console
-            console.log(`总共:${getMapSize(this._hashMap)} 字符;添加${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
+            void getMapSize(this._hashMap)
           },
         }]
         this._queueAndReturn(allTextCount)
       }
     }
     return this
+  }
+
+  public image(src: string, opts: ImageActionOpts = {}) {
+    if (!src)
+      throw new Error('image requires a src value')
+    const img = document.createElement('img')
+    img.src = src
+    if (opts.alt)
+      img.alt = opts.alt
+    if (opts.className)
+      img.className = opts.className
+    if (opts.width)
+      img.width = opts.width
+    if (opts.height)
+      img.height = opts.height
+    if (opts.attrs) {
+      for (const [key, value] of Object.entries(opts.attrs))
+        img.setAttribute(key, value)
+    }
+    return this._addDom(img, opts)
   }
 
   private _addDom(text: HTMLElement, opts: ActionOpts = {}) {
@@ -296,24 +361,31 @@ export class UnTyper {
         const cursor = this._cursor!
         const nodeParent = cursor.parentNode as HTMLElement
         const lastNode = nodeParent.childNodes[getMapSize(this._hashMap)]
-        nodeParent.insertBefore(text, lastNode)
-        const num = Number(nodeParent.getAttribute('data-source')) ?? 0
-        let pNode = nodeParent as any
-        if (Number(text.getAttribute('data-source')) < num) {
-          for (let i = 0; i < num; i++) {
-            pNode = pNode?.parentNode ?? pNode
-            if (+pNode.getAttribute('data-source') === Number(text.getAttribute('data-source')))
-              break
+        nodeParent.insertBefore(text, lastNode ?? null)
+        const dataSource = text.getAttribute('data-source')
+        const textDepth = dataSource ? Number(dataSource) : null
+        if (textDepth !== null) {
+          const num = Number(nodeParent.getAttribute('data-source')) ?? 0
+          let pNode = nodeParent as any
+          if (textDepth < num) {
+            for (let i = 0; i < num; i++) {
+              pNode = pNode?.parentNode ?? pNode
+              if (+pNode.getAttribute('data-source') === textDepth)
+                break
+            }
+            pNode = pNode?.parentNode
+            pNode.appendChild(text)
           }
-          pNode = pNode?.parentNode
-          pNode.appendChild(text)
-        }
-        else if (Number(text.getAttribute('data-source')) === num) {
-          pNode = pNode?.parentNode
-          pNode.appendChild(text)
+          else if (textDepth === num) {
+            pNode = pNode?.parentNode
+            pNode.appendChild(text)
+          }
         }
         // only add last childNode
-        text.insertBefore(cursor, null) // If this is null, then newNode is inserted at the end of node's child nodes.
+        const tagName = text.tagName?.toLowerCase() ?? ''
+        if (!VOID_ELEMENTS.has(tagName))
+          text.insertBefore(cursor, null) // If this is null, then newNode is inserted at the end of node's child nodes.
+        this._applyAnimation(text, opts.animation)
       },
     })
     return this._queueAndReturn(addDomAsQueueItems, opts)
@@ -341,11 +413,13 @@ export class UnTyper {
         if (queueItem.func && typeof queueItem.func === 'function') {
           queueItem.func()
           if (queueItem.delay) {
-            if ((queueItem.delay ?? 0) * random(0.8, 1.1) >= 1000)
+            const jitter = Math.random() * 0.3 + 0.8
+            const delayMs = (queueItem.delay ?? 0) * jitter
+            if (delayMs >= 1000)
               animatefn.startCursorAnimation()
             else
               animatefn.stopCursorAnimation()
-            await delay((queueItem.delay ?? 0) * random(0.8, 1.1), () => animatefn.stopCursorAnimation())
+            await delay(delayMs, () => animatefn.stopCursorAnimation())
           }
         }
         else {

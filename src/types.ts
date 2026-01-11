@@ -17,11 +17,6 @@ export interface ScopeData {
   cursorAnimation?: CursorAnimationOptions
 }
 
-export interface ActionOpts {
-  delay?: number
-  to?: 'start' | 'end'
-}
-
 export type CursorAnimationKind = 'opacity' | 'size' | 'gradient' | 'combined'
 
 export interface CursorAnimationOptions {
@@ -36,6 +31,25 @@ export interface CursorAnimationOptions {
     to?: string
     angle?: number
   }
+}
+
+export interface ElementAnimation {
+  keyframes: Keyframe[]
+  options?: KeyframeAnimationOptions
+}
+
+export interface ActionOpts {
+  delay?: number
+  to?: 'start' | 'end'
+  animation?: ElementAnimation
+}
+
+export interface ImageActionOpts extends ActionOpts {
+  alt?: string
+  className?: string
+  width?: number
+  height?: number
+  attrs?: Record<string, string>
 }
 
 export interface QueueItems {

@@ -341,15 +341,15 @@ export class UnTyper {
         if (queueItem.func && typeof queueItem.func === 'function') {
           queueItem.func()
           if (queueItem.delay) {
-            if (queueItem.delay * random(0.8, 1.1) >= 1000)
+            if ((queueItem.delay ?? 0) * random(0.8, 1.1) >= 1000)
               animatefn.startCursorAnimation()
             else
               animatefn.stopCursorAnimation()
-            await delay(queueItem.delay * random(0.8, 1.1), () => animatefn.stopCursorAnimation())
+            await delay((queueItem.delay ?? 0) * random(0.8, 1.1), () => animatefn.stopCursorAnimation())
           }
         }
         else {
-          await delay(queueItem.delay, () => animatefn.stopCursorAnimation())
+          await delay(queueItem.delay ?? 0, () => animatefn.stopCursorAnimation())
         }
         this._queue.cleanup(_queueKey)
       }
@@ -357,7 +357,7 @@ export class UnTyper {
         console.error('An error occurred during animation:', error)
       }
     }
-    if (this._queue.getQueue().length === 0) {
+    if (this._queue.getQueue().size === 0) {
       if (!this._scopedata.animate?.cancel) { animatefn.startCursorAnimation() }
       else {
         animatefn.stopCursorAnimation()

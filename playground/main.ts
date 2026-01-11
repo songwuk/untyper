@@ -12,11 +12,11 @@ const unTyper = new UnTyper(text, {
 })
 const lineNew = `
 a simple <span>typewriter</span>
- <em><strong class="font-semibold">for browser</strong></em>
+ <em><strong class="font-semibold">for browser</strong></em><a>67</a>
   <span>and</span> more support`
 const line = `
   a simple <span>typewriter</span>
-   <em><strong class="font-semibold">for browser</strong></em>
+   <em><strong class="font-semibold">for browser</strong></em><a>67</a>
     <span>and</span> more support`
 // unTyper.go()
 const unTyper2 = new UnTyper(text2, {

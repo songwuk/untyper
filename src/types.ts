@@ -2,7 +2,7 @@
  * type add delete pause move go
  */
 export interface UnTyperAnimate {
-  cancel: Boolean
+  cancel: boolean
 }
 export interface QueueItem {
   char?: string
@@ -14,6 +14,7 @@ export interface ScopeData {
   startDelay?: number
   animationspancontent?: string
   animate?: UnTyperAnimate
+  cursorAnimation?: CursorAnimationOptions
 }
 
 export interface ActionOpts {
@@ -21,11 +22,27 @@ export interface ActionOpts {
   to?: 'start' | 'end'
 }
 
+export type CursorAnimationKind = 'opacity' | 'size' | 'gradient' | 'combined'
+
+export interface CursorAnimationOptions {
+  kind?: CursorAnimationKind
+  duration?: number
+  size?: {
+    minScale?: number
+    maxScale?: number
+  }
+  gradient?: {
+    from?: string
+    to?: string
+    angle?: number
+  }
+}
+
 export interface QueueItems {
-  add: (steps: QueueItem[] | QueueItem) => any
-  getQueue: () => any
-  getKey: () => any
-  cleanup: (key: Symbol) => any
+  add: (steps: QueueItem[] | QueueItem) => QueueItems
+  getQueue: () => Map<symbol, QueueItem>
+  getKey: () => symbol[]
+  cleanup: (key: symbol) => void
 }
 
 export interface ParsehtmlIn {
@@ -41,4 +58,3 @@ export interface ParsehtmlOut {
   nodeName: string
   func: () => string
 }
-

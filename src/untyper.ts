@@ -5,18 +5,6 @@ import { delay, getMapSize, random, toString } from '../packages/h5/utils'
 import { animationspancontent } from '../packages/h5/constants'
 import { setcursoranimation } from '../packages/h5/cursoranimation'
 import type { ActionOpts, QueueItem, QueueItems, ScopeData } from './types'
-const HashMap: Map<Symbol, any> = new Map()
-const classSet = new Set()
-function checkRandom(_randomSet: number) {
-  if (!classSet.has(_randomSet)) {
-    classSet.add(_randomSet)
-    return _randomSet
-  }
-  else {
-    const randomSet = random(0, 100000)
-    return checkRandom(randomSet)
-  }
-}
 type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend'
 export class UnTyper {
   // private isAnimating: boolean
@@ -24,6 +12,8 @@ export class UnTyper {
   private _scopedata: ScopeData
   private _queue: QueueItems
   private _cursor: HTMLElement | null
+  private _hashMap: Map<symbol, number>
+  private _classSet: Set<number>
   constructor(dom: HTMLElement, scopedata: ScopeData = {}) {
     if (!dom)
       throw new Error('No element found')
@@ -35,16 +25,28 @@ export class UnTyper {
     }, { ...scopedata })
     this._scopedata = scopedata
     this._queue = Queue([{ delay: this._scopedata.startDelay }])
+    this._hashMap = new Map<symbol, number>()
+    this._classSet = new Set<number>()
     this._cursor = this._initCursor()
+  }
+
+  private _checkRandom(_randomSet: number): number {
+    if (!this._classSet.has(_randomSet)) {
+      this._classSet.add(_randomSet)
+      return _randomSet
+    }
+    const randomSet = random(0, 100000)
+    return this._checkRandom(randomSet)
   }
 
   private _initCursor(): null | HTMLElement {
     const randomSet = random(0, 100000)
-    const classValue = checkRandom(randomSet)
+    const classValue = this._checkRandom(randomSet)
     const span = document.createElement('span')
     span.setAttribute('class', `cursor${classValue}`)
     span.style.width = '0'
-    span.style.transform = 'translateX(-0.05em)'
+    span.style.setProperty('--untyper-cursor-translate', '-0.05em')
+    span.style.transform = 'translateX(var(--untyper-cursor-translate))'
     span.style.marginLeft = '2px'
     span.style.display = 'inline-block'
     span.textContent = this._scopedata.animationspancontent ?? animationspancontent
@@ -55,7 +57,10 @@ export class UnTyper {
   private async _attachCursor() {
     if (this._dom && this._cursor)
       this._dom.appendChild(this._cursor)
-    return setcursoranimation(this._cursor, { speed: this._scopedata.speed })
+    return setcursoranimation(this._cursor, {
+      speed: this._scopedata.speed,
+      animation: this._scopedata.cursorAnimation,
+    })
   }
 
   private _type(char: string, positionSelect: InsertPosition = 'beforebegin') {
@@ -73,8 +78,15 @@ export class UnTyper {
   // type text
   public type(text: string, opts: ActionOpts = {}) {
     const doc = Array.from(parse5.parseFragment(text).childNodes) as any[]
+    const node = doc[0]
+    if (!node)
+      return this
+    if (typeof node.value !== 'string')
+      throw new Error('type only supports plain text nodes')
+    if (node.value.length === 0)
+      return this
     const { speed } = this._scopedata
-    const chars = doc[0].value?.split('')
+    const chars = node.value ? node.value.split('') : []
     const charsAsQueueItems = chars.map((char: string) => {
       return {
         char,
@@ -86,16 +98,16 @@ export class UnTyper {
       ...charsAsQueueItems,
       {
         char: 'calculateTotal',
-        func: () => HashMap.set(Symbol(doc[0].value.length), doc[0].value.length),
+        func: () => this._hashMap.set(Symbol(node.value.length), node.value.length),
       },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
   }
 
   // move to next element
-  public move(movementArg: number, opts: ActionOpts = {}) {
+  public move(movementArg: number | null, opts: ActionOpts = {}) {
     const { speed } = this._scopedata
-    if (toString(movementArg) === 'null') {
+    if (movementArg === null || toString(movementArg) === 'null') {
       const { to } = opts
       if (to === 'end') {
         const endQuereItem = {
@@ -103,7 +115,7 @@ export class UnTyper {
           delay: speed,
           func: () => {
             const cursor = this._cursor!
-            cursor.style.transform = 'translateX(-0.05em)'
+            cursor.style.setProperty('--untyper-cursor-translate', '-0.05em')
             const nodeParent = cursor.parentNode as HTMLElement
             const lastNode = nodeParent.childNodes[nodeParent.childNodes.length]
             nodeParent.insertBefore(cursor, lastNode)
@@ -117,7 +129,7 @@ export class UnTyper {
           delay: speed,
           func: () => {
             const cursor = this._cursor!
-            cursor.style.transform = 'translateX(-0.2em)'
+            cursor.style.setProperty('--untyper-cursor-translate', '-0.2em')
             const nodeParent = cursor.parentNode as HTMLElement
             const lastNode = nodeParent.childNodes[0]
             nodeParent.insertBefore(cursor, lastNode)
@@ -125,6 +137,7 @@ export class UnTyper {
         }
         return this._queueAndReturn(startQuereItem, opts)
       }
+      throw new Error('move requires a target direction when movementArg is null')
     }
     if (movementArg >= 0)
       throw new Error('movementArg must be negative')
@@ -188,6 +201,8 @@ export class UnTyper {
 
   // delete text
   public delete(charAt: number, opts: ActionOpts = {}) {
+    if (charAt <= 0)
+      throw new Error('delete requires charAt to be greater than 0')
     const { speed } = this._scopedata
     // calculate the last index of the queue
     const diff = () => {
@@ -236,7 +251,7 @@ export class UnTyper {
       ...charsAsQueueItems,
       {
         char: 'calculateTotal',
-        func: () => HashMap.set(Symbol(text.length), text.length),
+        func: () => this._hashMap.set(Symbol(text.length), text.length),
       },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
@@ -263,7 +278,7 @@ export class UnTyper {
             const cursor = this._cursor!
             cursor && this._dom.appendChild(cursor)
             // eslint-disable-next-line no-console
-            console.log(`总共:${getMapSize(HashMap)} 字符;添加${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
+            console.log(`总共:${getMapSize(this._hashMap)} 字符;添加${textArr.filter(x => typeof x.func() !== 'string').length} 标签`)
           },
         }]
         this._queueAndReturn(allTextCount)
@@ -280,7 +295,7 @@ export class UnTyper {
       func: async () => {
         const cursor = this._cursor!
         const nodeParent = cursor.parentNode as HTMLElement
-        const lastNode = nodeParent.childNodes[getMapSize(HashMap)]
+        const lastNode = nodeParent.childNodes[getMapSize(this._hashMap)]
         nodeParent.insertBefore(text, lastNode)
         const num = Number(nodeParent.getAttribute('data-source')) ?? 0
         let pNode = nodeParent as any
@@ -313,8 +328,8 @@ export class UnTyper {
   }
 
   // start typing
-  public async go() {
-    this.animateText()
+  public async go(): Promise<void> {
+    return this.animateText()
   }
 
   private async animateText() {
@@ -342,7 +357,7 @@ export class UnTyper {
         console.error('An error occurred during animation:', error)
       }
     }
-    if (this._queue.getQueue.length === 0) {
+    if (this._queue.getQueue().length === 0) {
       if (!this._scopedata.animate?.cancel) { animatefn.startCursorAnimation() }
       else {
         animatefn.stopCursorAnimation()

@@ -2,7 +2,7 @@
  * type add delete pause move go
  */
 export interface UnTyperAnimate {
-  cancel: boolean
+  cancel?: boolean
 }
 export interface QueueItem {
   char?: string

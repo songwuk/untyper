@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
 import { UnTyper } from '../src/index'
+import type { UnTyperPlugin } from '../src/index'
 
 /**
  * @vitest-environment jsdom
@@ -74,4 +75,78 @@ test('Supports image insertion', async () => {
   expect(img?.getAttribute('width')).toBe('120')
   expect(img?.getAttribute('height')).toBe('60')
   expect(img?.getAttribute('data-track')).toBe('hero')
+})
+
+/**
+ * @vitest-environment jsdom
+ */
+test('Supports plugin actions and lifecycle hooks', async () => {
+  const dom = document.createElement('div')
+  document.body.appendChild(dom)
+  const events: string[] = []
+  const shoutPlugin: UnTyperPlugin = {
+    name: 'shout',
+    install(ctx) {
+      ctx.hook('beforeRun', () => {
+        events.push('beforeRun')
+        ctx.enqueue({
+          char: 'hookSuffix',
+          func: () => {
+            ctx.cursor?.insertAdjacentText('beforebegin', '!')
+          },
+        })
+      })
+      ctx.hook('afterRun', () => {
+        events.push('afterRun')
+      })
+      ctx.registerAction('shout', (api, text: string) => {
+        api.insertText(text.toUpperCase())
+      })
+    },
+  }
+
+  const unTyper = new UnTyper(dom, {
+    speed: 1,
+    startDelay: 0,
+    plugins: [shoutPlugin],
+  })
+
+  await unTyper
+    .type('say ')
+    .action('shout', 'plugin')
+    .go()
+
+  expect(dom.textContent).toMatchInlineSnapshot('"say PLUGIN!|"')
+  expect(events).toEqual(['beforeRun', 'afterRun'])
+})
+
+/**
+ * @vitest-environment jsdom
+ */
+test('Supports function plugins with async queue items', async () => {
+  const dom = document.createElement('div')
+  document.body.appendChild(dom)
+  const asyncTextPlugin = (ctx) => {
+    ctx.registerAction('asyncText', (api, text: string) => {
+      api.enqueue({
+        char: 'asyncText',
+        func: async () => {
+          await new Promise(resolve => setTimeout(resolve, 5))
+          api.cursor?.insertAdjacentText('beforebegin', text)
+        },
+      })
+    })
+  }
+
+  const unTyper = new UnTyper(dom, {
+    speed: 1,
+    startDelay: 0,
+  })
+
+  await unTyper
+    .use(asyncTextPlugin)
+    .action('asyncText', 'later')
+    .go()
+
+  expect(dom.textContent).toMatchInlineSnapshot('"later|"')
 })

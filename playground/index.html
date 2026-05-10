@@ -1,14 +1,65 @@
-<div>
-  <div id="text"></div>
-  <div id="text2"></div>
-</div>
-<style>
-  #text {
-    color: black;
-  }
-  .btn {
-    margin-top: 50px;
-  }
-</style>
-<script type="module" src="./main.ts"></script>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UnTyper Playground</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">untyper playground</p>
+          <h1>API and plugin example</h1>
+        </div>
+        <button id="restart" type="button">Restart</button>
+      </header>
 
+      <section class="workspace">
+        <article class="demo-surface">
+          <div class="surface-header">
+            <span>Core chain</span>
+            <span class="status-pill" id="core-status">pending</span>
+          </div>
+          <div id="text" class="typing-target"></div>
+        </article>
+
+        <article class="demo-surface">
+          <div class="surface-header">
+            <span>Plugin chain</span>
+            <span class="status-pill" id="plugin-status">pending</span>
+          </div>
+          <div id="text2" class="typing-target compact"></div>
+        </article>
+      </section>
+
+      <section class="inspector">
+        <article>
+          <h2>Lifecycle</h2>
+          <ol id="event-log"></ol>
+        </article>
+        <article>
+          <h2>Covered API</h2>
+          <div class="feature-grid">
+            <span>type</span>
+            <span>pause</span>
+            <span>delete</span>
+            <span>move</span>
+            <span>add</span>
+            <span>image</span>
+            <span>go</span>
+            <span>animation</span>
+            <span>cursorAnimation</span>
+            <span>plugins</span>
+            <span>use</span>
+            <span>registerAction</span>
+            <span>action</span>
+            <span>enqueue</span>
+            <span>hook</span>
+          </div>
+        </article>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

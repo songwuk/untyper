@@ -55,6 +55,7 @@ await typer
 | `animationspancontent` | `string` | `|` | Cursor character. |
 | `animate.cancel` | `boolean` | `false` | Hide cursor after the queue completes. |
 | `cursorAnimation` | `CursorAnimationOptions` | — | Cursor animation customization. |
+| `plugins` | `UnTyperPluginUse[]` | `[]` | Plugins installed when the instance is created. |
 
 ### `type(text, options)`
 Adds a plain text typing action. HTML is not supported here.
@@ -111,6 +112,21 @@ Inserts an `img` element with optional attributes. You can also pass `options.an
 
 Returns `this`.
 
+### `use(plugin, options)`
+Installs a plugin after the instance is created. A plugin can be a function or an object with `name` and `install(ctx, options)`.
+
+Returns `this`.
+
+### `registerAction(name, handler)`
+Registers a chainable custom action.
+
+Returns `this`.
+
+### `action(name, ...args)`
+Runs a custom action registered by a plugin or by `registerAction`.
+
+Returns `this`.
+
 ### `go()`
 Runs the queued actions.
 
@@ -142,6 +158,45 @@ await typer
   })
   .go()
 ```
+
+## Plugin API
+Plugins follow the common frontend plugin shape: expose a stable `install(ctx, options)` entrypoint, keep setup side effects inside `install`, and register extension points through the provided context instead of reaching into private fields.
+
+```ts
+import type { UnTyperPlugin } from 'untyper'
+
+const emojiPlugin: UnTyperPlugin<{ suffix?: string }> = {
+  name: 'emoji',
+  install(ctx, options) {
+    ctx.registerAction('emoji', (api, text: string) => {
+      api.insertText(`${text}${options?.suffix ?? ''}`)
+    })
+
+    ctx.hook('afterRun', ({ root }) => {
+      root.setAttribute('data-untyper-complete', 'true')
+    })
+  },
+}
+
+await new UnTyper(target, {
+  speed: 80,
+  plugins: [[emojiPlugin, { suffix: '!' }]],
+})
+  .type('Status: ')
+  .action('emoji', 'ready')
+  .go()
+```
+
+Plugin context:
+
+| API | Description |
+| --- | --- |
+| `ctx.registerAction(name, handler)` | Adds a named custom action that can be called with `action(name, ...args)`. |
+| `ctx.enqueue(steps, options)` | Adds raw queue steps for advanced plugins. Queue `func` handlers may be async. |
+| `ctx.insertText(text, options)` | Reuses the built-in text typing behavior. |
+| `ctx.insertElement(element, options)` | Reuses the built-in DOM insertion behavior. |
+| `ctx.hook(name, handler)` | Registers lifecycle hooks: `beforeRun`, `afterRun`, `beforeStep`, `afterStep`, `onError`. |
+| `ctx.root`, `ctx.cursor`, `ctx.options` | Read-only access to the target element, cursor, and resolved options. |
 
 ## License
 

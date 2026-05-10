@@ -11,6 +11,13 @@ import type {
   QueueItem,
   QueueItems,
   ScopeData,
+  UnTyperHook,
+  UnTyperHookName,
+  UnTyperPlugin,
+  UnTyperPluginAction,
+  UnTyperPluginContext,
+  UnTyperPluginInstaller,
+  UnTyperPluginUse,
 } from './types'
 
 type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend'
@@ -48,10 +55,14 @@ export class UnTyper {
   private _cursor: HTMLElement | null
   private _hashMap: Map<symbol, number>
   private _classSet: Set<number>
+  private _actions: Map<string, UnTyperPluginAction>
+  private _hooks: Record<UnTyperHookName, UnTyperHook[]>
+  private _installedPlugins: Set<string>
 
   constructor(dom: HTMLElement, scopedata: ScopeData = {}) {
     if (!dom)
       throw new Error('No element found')
+    const plugins = scopedata.plugins ?? []
     this._dom = dom
     this._scopedata = {
       ...DEFAULT_SCOPE,
@@ -64,7 +75,111 @@ export class UnTyper {
     this._queue = Queue([{ delay: this._scopedata.startDelay }])
     this._hashMap = new Map<symbol, number>()
     this._classSet = new Set<number>()
+    this._actions = new Map<string, UnTyperPluginAction>()
+    this._hooks = {
+      beforeRun: [],
+      afterRun: [],
+      beforeStep: [],
+      afterStep: [],
+      onError: [],
+    }
+    this._installedPlugins = new Set<string>()
     this._cursor = this._initCursor()
+    plugins.forEach(plugin => this._installPluginEntry(plugin))
+  }
+
+  private _createPluginContext(): UnTyperPluginContext {
+    const getInstance = () => this
+    return {
+      instance: this,
+      get root() {
+        return getInstance()._dom
+      },
+      get cursor() {
+        return getInstance()._cursor
+      },
+      get options() {
+        return getInstance()._scopedata
+      },
+      registerAction: (name, handler) => {
+        this.registerAction(name, handler)
+      },
+      enqueue: (steps, opts = {}) => this._queueAndReturn(steps, opts),
+      insertText: (text, opts = {}, jumpNextLine = false) => this._addtype(text, opts, jumpNextLine),
+      insertElement: (element, opts = {}) => this._addDom(element, opts),
+      hook: (name, handler) => {
+        this._registerHook(name, handler)
+      },
+    }
+  }
+
+  private _installPluginEntry(plugin: UnTyperPluginUse) {
+    if (Array.isArray(plugin)) {
+      const [installer, options] = plugin
+      return this.use(installer, options)
+    }
+    return this.use(plugin as UnTyperPlugin | UnTyperPluginInstaller)
+  }
+
+  private _registerHook(name: UnTyperHookName, handler: UnTyperHook) {
+    if (!this._hooks[name])
+      throw new Error(`Unknown hook "${name}"`)
+    this._hooks[name].push(handler)
+  }
+
+  private async _emitHook(
+    name: UnTyperHookName,
+    payload: { queueItem?: QueueItem; index?: number; error?: unknown } = {},
+  ) {
+    const hooks = this._hooks[name]
+    if (!hooks.length)
+      return
+    for (const hook of hooks) {
+      await hook({
+        instance: this,
+        root: this._dom,
+        cursor: this._cursor,
+        options: this._scopedata,
+        ...payload,
+      })
+    }
+  }
+
+  public use<TOptions = unknown>(
+    plugin: UnTyperPlugin<TOptions> | UnTyperPluginInstaller<TOptions>,
+    options?: TOptions,
+  ) {
+    const installer = typeof plugin === 'function' ? plugin : plugin.install
+    const pluginName = typeof plugin === 'function' ? plugin.name : plugin.name
+    if (typeof installer !== 'function')
+      throw new Error('Invalid plugin: expected a function or an object with install(ctx)')
+    if (pluginName && this._installedPlugins.has(pluginName))
+      return this
+    installer(this._createPluginContext(), options)
+    if (pluginName)
+      this._installedPlugins.add(pluginName)
+    return this
+  }
+
+  public registerAction(name: string, handler: UnTyperPluginAction) {
+    const actionName = name.trim()
+    if (!actionName)
+      throw new Error('Action name cannot be empty')
+    if (typeof handler !== 'function')
+      throw new Error(`Action "${actionName}" requires a handler`)
+    if (this._actions.has(actionName))
+      throw new Error(`Action "${actionName}" is already registered`)
+    this._actions.set(actionName, handler)
+    return this
+  }
+
+  public action(name: string, ...args: any[]) {
+    const actionName = name.trim()
+    const handler = this._actions.get(actionName)
+    if (!handler)
+      throw new Error(`Action "${actionName}" is not registered`)
+    handler(this._createPluginContext(), ...args)
+    return this
   }
 
   private _checkRandom(randomSet: number): number {
@@ -144,7 +259,9 @@ export class UnTyper {
       ...charsAsQueueItems,
       {
         char: 'calculateTotal',
-        func: () => this._hashMap.set(Symbol(node.value.length), node.value.length),
+        func: () => {
+          this._hashMap.set(Symbol(node.value.length), node.value.length)
+        },
       },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
@@ -164,7 +281,7 @@ export class UnTyper {
             cursor.style.setProperty('--untyper-cursor-translate', '-0.05em')
             const nodeParent = cursor.parentNode as HTMLElement
             const lastNode = nodeParent.childNodes[nodeParent.childNodes.length]
-            nodeParent.insertBefore(cursor, lastNode)
+            nodeParent.insertBefore(cursor, lastNode ?? null)
           },
         }
         return this._queueAndReturn(endQuereItem, opts)
@@ -297,7 +414,9 @@ export class UnTyper {
       ...charsAsQueueItems,
       {
         char: 'calculateTotal',
-        func: () => this._hashMap.set(Symbol(text.length), text.length),
+        func: () => {
+          this._hashMap.set(Symbol(text.length), text.length)
+        },
       },
     ]
     return this._queueAndReturn(itemtoQueue, opts)
@@ -406,12 +525,17 @@ export class UnTyper {
 
   private async animateText() {
     const animatefn = await this._attachCursor()
-    const queueItems = [...this._queue.getQueue()]
-    for (let i = 0; i < queueItems.length; i++) {
-      const [_queueKey, queueItem] = queueItems[i]
+    await this._emitHook('beforeRun')
+    let index = 0
+    while (this._queue.getQueue().size > 0) {
+      const queueEntry = this._queue.getQueue().entries().next().value as [symbol, QueueItem] | undefined
+      if (!queueEntry)
+        break
+      const [_queueKey, queueItem] = queueEntry
       try {
+        await this._emitHook('beforeStep', { queueItem, index })
         if (queueItem.func && typeof queueItem.func === 'function') {
-          queueItem.func()
+          await queueItem.func()
           if (queueItem.delay) {
             const jitter = Math.random() * 0.3 + 0.8
             const delayMs = (queueItem.delay ?? 0) * jitter
@@ -425,10 +549,15 @@ export class UnTyper {
         else {
           await delay(queueItem.delay ?? 0, () => animatefn.stopCursorAnimation())
         }
-        this._queue.cleanup(_queueKey)
+        await this._emitHook('afterStep', { queueItem, index })
       }
       catch (error) {
+        await this._emitHook('onError', { queueItem, index, error })
         console.error('An error occurred during animation:', error)
+      }
+      finally {
+        this._queue.cleanup(_queueKey)
+        index++
       }
     }
     if (this._queue.getQueue().size === 0) {
@@ -439,5 +568,6 @@ export class UnTyper {
         cursor.style.display = 'none'
       }
     }
+    await this._emitHook('afterRun')
   }
 }

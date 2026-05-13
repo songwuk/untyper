@@ -3,7 +3,7 @@
 
 [![NPM version](https://img.shields.io/npm/v/untyper?color=a1b858&label=)](https://www.npmjs.com/package/untyper)
 
-![untyper](./gif/Kapture%202022-10-14%20at%2014.22.02.gif)
+![untyper feature support](./gif/untyper-feature-support.gif)
 
 ## [Live demo](https://stackblitz.com/edit/vitejs-vite-2qxcej?file=main.js)
 A typewriter utility for the browser. It builds a queue of actions so you can chain `type`, `pause`, `delete`, `move`, `add`, `image`, and then run them with `go()`.
